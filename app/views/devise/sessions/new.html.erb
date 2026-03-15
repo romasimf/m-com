@@ -1,0 +1,33 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <%= image_tag "logo.png", alt: "m.com" %> 
+    </div>
+
+    <h1 class="auth-title">Вход в аккаунт</h1>
+    <p class="auth-subtitle">Рады видеть вас снова</p>
+
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "auth-form" }) do |f| %>
+      <div class="auth-field">
+        <%= f.label :email, "Email", class: "auth-label" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "auth-input" %>
+      </div>
+
+      <div class="auth-field">
+        <%= f.label :password, "Пароль", class: "auth-label" %>
+        <%= f.password_field :password, autocomplete: "current-password", class: "auth-input" %>
+      </div>
+
+      <%= f.submit "Войти", class: "auth-btn auth-btn-primary" %>
+    <% end %>
+
+    <div class="auth-footer">
+      <p>Нет аккаунта?</p>
+      <%= link_to "Создать аккаунт", new_user_registration_path, class: "auth-link" %>
+    </div>
+
+    <div class="auth-footer">
+      <%= link_to "Забыли пароль?", new_user_password_path, class: "auth-link" %>
+    </div>
+  </div>
+</div>

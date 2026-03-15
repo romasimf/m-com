@@ -1,0 +1,36 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <%= image_tag "logo.png", alt: "m.com" %> 
+    </div>
+
+    <h1 class="auth-title">Создайте аккаунт</h1>
+    <p class="auth-subtitle">Присоединяйтесь к платформе уже сегодня</p>
+
+    <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "auth-form" }) do |f| %>
+      <%= render "devise/shared/error_messages", resource: resource %>
+
+      <div class="auth-field">
+        <%= f.label :email, "Email", class: "auth-label" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "auth-input" %>
+      </div>
+
+      <div class="auth-field">
+        <%= f.label :password, "Пароль", class: "auth-label" %>
+        <%= f.password_field :password, autocomplete: "new-password", class: "auth-input" %>
+      </div>
+
+      <div class="auth-field">
+        <%= f.label :password_confirmation, "Подтвердите пароль", class: "auth-label" %>
+        <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "auth-input" %>
+      </div>
+
+      <%= f.submit "Создать аккаунт", class: "auth-btn auth-btn-primary" %>
+    <% end %>
+
+    <div class="auth-footer">
+      <p>Уже есть аккаунт?</p>
+      <%= link_to "Войти", new_user_session_path, class: "auth-link" %>
+    </div>
+  </div>
+</div>
