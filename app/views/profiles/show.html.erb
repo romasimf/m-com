@@ -1,0 +1,84 @@
+<div class="profile-page">
+  <!-- Левая панель -->
+  <aside class="profile-sidebar">
+    <div class="profile-brand">
+      <%= image_tag "logo.png", alt: "m.com", class: "profile-brand-logo" %>
+    </div>
+
+    <nav class="profile-nav">
+      <%= link_to "#", class: "profile-nav-item" do %>
+        <%= image_tag "home.png", class: "profile-nav-icon" %>
+        <span>Главная</span>
+      <% end %>
+
+      <%= link_to "#", class: "profile-nav-item" do %>
+        <%= image_tag "settings.png", class: "profile-nav-icon" %>
+        <span>Настройки</span>
+      <% end %>
+
+      <%= link_to "#", class: "profile-nav-item" do %>
+        <%= image_tag "notifications.png", class: "profile-nav-icon" %>
+        <span>Уведомления</span>
+      <% end %>
+
+      <%= link_to "#", class: "profile-nav-item" do %>
+        <%= image_tag "messages.png", class: "profile-nav-icon" %>
+        <span>Сообщения</span>
+      <% end %>
+
+      <%= link_to profile_path, class: "profile-nav-item active" do %>
+        <%= image_tag "profile.png", class: "profile-nav-icon" %>
+        <span>Профиль</span>
+      <% end %>
+    </nav>
+
+    <button class="profile-post-btn">Публикация</button>
+
+    <div class="profile-logout">
+      <%= button_to "Выйти",
+          destroy_user_session_path,
+          method: :delete,
+          class: "profile-logout-btn" %>
+    </div>
+  </aside>
+
+  <!-- Центральная часть -->
+  <main class="profile-main">
+    <div class="profile-cover"></div>
+
+    <div class="profile-header">
+      <div class="profile-avatar-wrap">
+        <%= image_tag "avatar.png", alt: "Аватар", class: "profile-avatar" %>
+      </div>
+
+      <div class="profile-info">
+        <h1 class="avatar.png-name">
+          <%= current_user.email.split("@").first.capitalize %>
+        </h1>
+
+        <p class="profile-username">
+          @<%= current_user.email.split("@").first.downcase %>
+        </p>
+
+        <div class="profile-stats">
+          <span>1мл Подписчиков</span>
+          <span>500 Подписок</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-tabs">
+      <div class="profile-tab active">Посты</div>
+      <div class="profile-tab">Ответы</div>
+      <div class="profile-tab">Медиа</div>
+      <div class="profile-tab">Лайки</div>
+    </div>
+
+    <div class="profile-content"></div>
+  </main>
+
+  <!-- Правая панель -->
+  <aside class="profile-rightbar">
+    <input type="text" placeholder="Поиск" class="profile-search">
+  </aside>
+</div>
