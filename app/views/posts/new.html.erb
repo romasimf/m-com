@@ -1,0 +1,85 @@
+<div class="profile-page">
+  <aside class="profile-sidebar">
+    <div class="profile-brand">
+      <%= image_tag "logo.png", alt: "m.com", class: "profile-brand-logo" %>
+    </div>
+
+    <nav class="profile-nav">
+      <%= link_to "#", class: "profile-nav-item" do %>
+        <%= image_tag "home.png", class: "profile-nav-icon" %>
+        <span>Главная</span>
+      <% end %>
+
+      <%= link_to "#", class: "profile-nav-item" do %>
+        <%= image_tag "settings.png", class: "profile-nav-icon" %>
+        <span>Настройки</span>
+      <% end %>
+
+      <%= link_to "#", class: "profile-nav-item" do %>
+        <%= image_tag "notifications.png", class: "profile-nav-icon" %>
+        <span>Уведомления</span>
+      <% end %>
+
+      <%= link_to "#", class: "profile-nav-item" do %>
+        <%= image_tag "messages.png", class: "profile-nav-icon" %>
+        <span>Сообщения</span>
+      <% end %>
+
+      <%= link_to profile_path, class: "profile-nav-item active" do %>
+        <%= image_tag "profile.png", class: "profile-nav-icon" %>
+        <span>Профиль</span>
+      <% end %>
+    </nav>
+
+    <div class="profile-logout">
+      <%= button_to "Выйти",
+          destroy_user_session_path,
+          method: :delete,
+          class: "profile-logout-btn" %>
+    </div>
+  </aside>
+
+  <main class="profile-main">
+    <div class="post-create-card">
+      <div class="post-create-header">
+        <%= image_tag "post-icon.png", alt: "post icon", class: "post-header-icon" %>
+        <h2 class="post-create-title">Новый пост</h2>
+      </div>
+
+      <%= form_with model: @post, local: true do |f| %>
+        <% if @post.errors.any? %>
+          <div style="color: #ff6b6b; margin-bottom: 16px;">
+            <ul>
+              <% @post.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <div class="post-create-body">
+          <div class="post-media-upload">
+            <label class="upload-area">
+              <%= image_tag "upload-arrow.png", alt: "upload", class: "upload-arrow-icon" %>
+              <span class="upload-text">Добавьте фото</span>
+              <%= f.file_field :images, multiple: true, accept: "image/*", style: "display: none;" %>
+            </label>
+          </div>
+
+          <div class="post-textarea-wrap">
+            <%= f.text_area :body,
+                  class: "post-textarea",
+                  placeholder: "Напишите что-нибудь...",
+                  rows: 3 %>
+          </div>
+
+          <%= f.submit "Опубликовать", class: "post-submit-btn" %>
+        </div>
+      <% end %>
+    </div>
+  </main>
+
+  <aside class="profile-rightbar">
+    <input type="text" placeholder="Поиск" class="profile-search">
+  </aside>
+</div>
