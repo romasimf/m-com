@@ -1,5 +1,4 @@
 <div class="profile-page">
-  <!-- Левая панель -->
   <aside class="profile-sidebar">
     <div class="profile-brand">
       <%= image_tag "logo.png", alt: "m.com", class: "profile-brand-logo" %>
@@ -32,7 +31,7 @@
       <% end %>
     </nav>
 
-    <button class="profile-post-btn">Публикация</button>
+    <%= link_to "Публикация", new_post_path, class: "profile-post-btn" %>
 
     <div class="profile-logout">
       <%= button_to "Выйти",
@@ -42,7 +41,6 @@
     </div>
   </aside>
 
-  <!-- Центральная часть -->
   <main class="profile-main">
     <div class="profile-cover"></div>
 
@@ -52,12 +50,12 @@
       </div>
 
       <div class="profile-info">
-        <h1 class="avatar.png-name">
-          <%= current_user.email.split("@").first.capitalize %>
+        <h1 class="profile-name">
+          <%= @user.email.split("@").first.capitalize %>
         </h1>
 
         <p class="profile-username">
-          @<%= current_user.email.split("@").first.downcase %>
+          @<%= @user.email.split("@").first.downcase %>
         </p>
 
         <div class="profile-stats">
@@ -74,11 +72,110 @@
       <div class="profile-tab">Лайки</div>
     </div>
 
-    <div class="profile-content"></div>
+    <div class="profile-content">
+      <% if @posts.any? %>
+        <% @posts.each do |post| %>
+          <div class="post-card">
+            <div class="post-card-date">
+              <%= post.created_at.strftime("%d.%m.%Y %H:%M") %>
+            </div>
+
+            <% if post.body.present? %>
+              <div class="post-card-body">
+                <%= simple_format(post.body, {}, wrapper_tag: "div") %>
+              </div>
+            <% end %>
+
+            <% if post.images.attached? %>
+              <div class="post-images-wrap">
+                <% post.images.each do |image| %>
+                  <%= image_tag image, class: "post-image" %>
+                <% end %>
+              </div>
+            <% end %>
+
+            <div class="post-card-actions">
+              <button type="button" class="post-edit-btn">
+                Редактировать
+              </button>
+
+              <button
+                type="button"
+                class="post-delete-btn open-delete-modal"
+                data-post-id="<%= post.id %>">
+                Удалить
+              </button>
+
+              <%= form_with url: post_path(post),
+                  method: :delete,
+                  local: true,
+                  html: { id: "delete-form-#{post.id}", style: "display:none;" } do %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      <% else %>
+        <div class="empty-posts-message">
+          У вас пока нет постов
+        </div>
+      <% end %>
+    </div>
   </main>
 
-  <!-- Правая панель -->
   <aside class="profile-rightbar">
     <input type="text" placeholder="Поиск" class="profile-search">
   </aside>
 </div>
+
+<div id="deleteModal" class="delete-modal hidden">
+  <div class="delete-modal-content">
+    <h3>Удалить пост?</h3>
+    <p>Это действие нельзя отменить.</p>
+
+    <div class="delete-modal-actions">
+      <button type="button" id="cancelDelete" class="modal-cancel-btn">Отмена</button>
+      <button type="button" id="confirmDelete" class="modal-delete-btn">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function initDeleteModal() {
+    const modal = document.getElementById("deleteModal");
+    const cancelBtn = document.getElementById("cancelDelete");
+    const confirmBtn = document.getElementById("confirmDelete");
+
+    if (!modal || !cancelBtn || !confirmBtn) return;
+
+    let currentPostId = null;
+
+    document.querySelectorAll(".open-delete-modal").forEach((button) => {
+      button.onclick = function () {
+        currentPostId = this.dataset.postId;
+        modal.classList.remove("hidden");
+      };
+    });
+
+    cancelBtn.onclick = function () {
+      modal.classList.add("hidden");
+      currentPostId = null;
+    };
+
+    confirmBtn.onclick = function () {
+      if (currentPostId) {
+        const form = document.getElementById(`delete-form-${currentPostId}`);
+        if (form) form.requestSubmit();
+      }
+    };
+
+    modal.onclick = function (event) {
+      if (event.target === modal) {
+        modal.classList.add("hidden");
+        currentPostId = null;
+      }
+    };
+  }
+
+  document.addEventListener("DOMContentLoaded", initDeleteModal);
+  document.addEventListener("turbo:load", initDeleteModal);
+</script>
