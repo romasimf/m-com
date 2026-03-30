@@ -3,5 +3,6 @@ class ProfilesController < ApplicationController
 
   def show
     @user = current_user
+    @posts = current_user.posts.includes(images_attachments: :blob).order(created_at: :desc)
   end
 end

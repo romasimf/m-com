@@ -1,0 +1,143 @@
+<div class="profile-page">
+  <aside class="profile-sidebar">
+    <div class="profile-brand">
+      <%= image_tag "logo.png", alt: "m.com", class: "profile-brand-logo" %>
+    </div>
+
+    <nav class="profile-nav">
+      <%= link_to "#", class: "profile-nav-item" do %>
+        <%= image_tag "home.png", class: "profile-nav-icon" %>
+        <span>Главная</span>
+      <% end %>
+
+      <%= link_to "#", class: "profile-nav-item" do %>
+        <%= image_tag "settings.png", class: "profile-nav-icon" %>
+        <span>Настройки</span>
+      <% end %>
+
+      <%= link_to "#", class: "profile-nav-item" do %>
+        <%= image_tag "notifications.png", class: "profile-nav-icon" %>
+        <span>Уведомления</span>
+      <% end %>
+
+      <%= link_to "#", class: "profile-nav-item" do %>
+        <%= image_tag "messages.png", class: "profile-nav-icon" %>
+        <span>Сообщения</span>
+      <% end %>
+
+      <%= link_to profile_path, class: "profile-nav-item active" do %>
+        <%= image_tag "profile.png", class: "profile-nav-icon" %>
+        <span>Профиль</span>
+      <% end %>
+    </nav>
+
+    <div class="profile-logout">
+      <%= button_to "Выйти",
+          destroy_user_session_path,
+          method: :delete,
+          class: "profile-logout-btn" %>
+    </div>
+  </aside>
+
+  <main class="profile-main">
+    <div class="post-create-card">
+      <div class="post-create-header">
+        <%= image_tag "post-icon.png", alt: "post icon", class: "post-header-icon" %>
+        <h2 class="post-create-title">Новый пост</h2>
+      </div>
+
+      <%= form_with model: @post, local: true do |f| %>
+        <% if @post.errors.any? %>
+          <div style="color: #ff6b6b; margin-bottom: 16px;">
+            <ul>
+              <% @post.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
+        <div class="post-create-body">
+          <div class="post-media-upload">
+            <label class="upload-area" id="upload-area">
+              <div class="upload-placeholder" id="upload-placeholder">
+                <%= image_tag "upload-arrow.png", alt: "upload", class: "upload-arrow-icon" %>
+                <span class="upload-text">Добавьте фото</span>
+              </div>
+
+              <div id="post-images-preview" class="post-images-preview hidden"></div>
+
+              <%= f.file_field :images,
+                    multiple: true,
+                    accept: "image/*",
+                    style: "display: none;",
+                    id: "post-images-input" %>
+            </label>
+          </div>
+
+          <div class="post-textarea-wrap">
+            <%= f.text_area :body,
+                  class: "post-textarea",
+                  placeholder: "Напишите что-нибудь...",
+                  rows: 3 %>
+          </div>
+
+          <%= f.submit "Опубликовать", class: "post-submit-btn" %>
+        </div>
+      <% end %>
+    </div>
+  </main>
+
+  <aside class="profile-rightbar">
+    <input type="text" placeholder="Поиск" class="profile-search">
+  </aside>
+</div>
+
+<script>
+  function initPostImagePreview() {
+    const input = document.getElementById("post-images-input");
+    const preview = document.getElementById("post-images-preview");
+    const placeholder = document.getElementById("upload-placeholder");
+
+    if (!input || !preview || !placeholder) return;
+
+    input.onchange = function () {
+      preview.innerHTML = "";
+
+      const files = Array.from(input.files || []);
+
+      if (files.length === 0) {
+        preview.classList.add("hidden");
+        placeholder.classList.remove("hidden");
+        return;
+      }
+
+      preview.classList.remove("hidden");
+      placeholder.classList.add("hidden");
+
+      files.forEach((file) => {
+        if (!file.type.startsWith("image/")) return;
+
+        const reader = new FileReader();
+
+        reader.onload = function (event) {
+          const item = document.createElement("div");
+          item.className = "post-preview-item";
+
+          const img = document.createElement("img");
+          img.src = event.target.result;
+          img.alt = file.name;
+          img.className = "post-preview-image";
+
+          item.appendChild(img);
+          preview.appendChild(item);
+        };
+
+        reader.readAsDataURL(file);
+      });
+    };
+  }
+
+  document.addEventListener("DOMContentLoaded", initPostImagePreview);
+  document.addEventListener("turbo:load", initPostImagePreview);
+</script>
