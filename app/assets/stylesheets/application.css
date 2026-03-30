@@ -650,11 +650,12 @@ select {
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.02);
   transition: all 0.2s ease;
+  overflow: hidden;
 }
 
 .post-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .post-card-date {
@@ -666,6 +667,7 @@ select {
 }
 
 .post-card-body {
+  min-width: 0;
   margin-bottom: 16px;
   font-size: 16px;
   line-height: 1.6;
@@ -673,32 +675,38 @@ select {
   font-weight: 400;
 }
 
-.post-card-body div {
+.post-card-body div,
+.post-card-body p {
   margin: 0;
+  min-width: 0;
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  overflow: visible !important;
 }
-
 .post-images-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
   margin-top: 12px;
-  margin-bottom: 12px;
 }
 
 .post-image {
   display: block;
-  margin: 0 auto;
-  max-width: 420px;
-  max-height: 420px;
+  margin-left: auto;
+  margin-right: auto;
+
   width: auto;
   height: auto;
-  object-fit: contain;
-  border-radius: 16px;
+  max-width: min(100%, 520px);
+  max-height: 520px;
+
+  border-radius: 18px;
   background: transparent;
-  box-shadow: none;
 }
 
+.post-content {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
 .post-card-actions {
   margin-top: 24px;
   padding-top: 16px;
@@ -873,4 +881,63 @@ select {
     padding: 30px 22px;
     border-radius: 22px;
   }
+}
+
+.upload-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 180px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--line);
+  border-radius: 20px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-area:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--line-strong);
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.upload-placeholder.hidden {
+  display: none;
+}
+
+.post-images-preview {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.post-images-preview.hidden {
+  display: none;
+}
+
+.post-preview-item {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.post-preview-image {
+  max-width: 100%;
+  max-height: 320px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 16px;
+  display: block;
 }
