@@ -35,9 +35,9 @@
 
     <div class="profile-logout">
       <%= button_to "Выйти",
-          destroy_user_session_path,
-          method: :delete,
-          class: "profile-logout-btn" %>
+      destroy_user_session_path,
+      method: :delete,
+      class: "profile-logout-btn" %>
     </div>
   </aside>
 
@@ -95,9 +95,7 @@
             <% end %>
 
             <div class="post-card-actions">
-              <button type="button" class="post-edit-btn">
-                Редактировать
-              </button>
+              <%= link_to "Редактировать", edit_post_path(post), class: "post-edit-btn" %>
 
               <button
                 type="button"
@@ -107,9 +105,9 @@
               </button>
 
               <%= form_with url: post_path(post),
-                  method: :delete,
-                  local: true,
-                  html: { id: "delete-form-#{post.id}", style: "display:none;" } do %>
+              method: :delete,
+              local: true,
+              html: { id: "delete-form-#{post.id}", style: "display:none;" } do %>
               <% end %>
             </div>
           </div>
@@ -131,7 +129,6 @@
   <div class="delete-modal-content">
     <h3>Удалить пост?</h3>
     <p>Это действие нельзя отменить.</p>
-
     <div class="delete-modal-actions">
       <button type="button" id="cancelDelete" class="modal-cancel-btn">Отмена</button>
       <button type="button" id="confirmDelete" class="modal-delete-btn">Удалить</button>
