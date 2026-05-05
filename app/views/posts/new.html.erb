@@ -57,22 +57,32 @@
           </div>
         <% end %>
 
+        <div id="images-limit-error-wrap" style="color: #ff6b6b; margin-bottom: 16px;" class="hidden">
+          <ul>
+            <li id="images-limit-error"></li>
+          </ul>
+        </div>
+
         <div class="post-create-body">
           <div class="post-media-upload">
-            <label class="upload-area" id="upload-area">
+            <label class="upload-area" id="add-more-images-btn" for="post-images-input">
               <div class="upload-placeholder" id="upload-placeholder">
                 <%= image_tag "upload-arrow.png", alt: "upload", class: "upload-arrow-icon" %>
                 <span class="upload-text">Добавьте фото</span>
               </div>
-
-              <div id="post-images-preview" class="post-images-preview hidden"></div>
-
-              <%= f.file_field :images,
-                    multiple: true,
-                    accept: "image/*",
-                    style: "display: none;",
-                    id: "post-images-input" %>
             </label>
+
+            <div
+              id="post-images-preview"
+              class="post-images-preview hidden"
+              data-existing-count="0"
+            ></div>
+
+            <%= f.file_field :images,
+                  multiple: true,
+                  accept: "image/*",
+                  style: "display: none;",
+                  id: "post-images-input" %>
           </div>
 
           <div class="post-textarea-wrap">
@@ -94,50 +104,126 @@
 </div>
 
 <script>
-  function initPostImagePreview() {
+  function initNewPostPreview() {
     const input = document.getElementById("post-images-input");
     const preview = document.getElementById("post-images-preview");
+    const addButton = document.getElementById("add-more-images-btn");
     const placeholder = document.getElementById("upload-placeholder");
+    const limitError = document.getElementById("images-limit-error");
+    const limitErrorWrap = document.getElementById("images-limit-error-wrap");
 
-    if (!input || !preview || !placeholder) return;
+    if (!input || !preview || !addButton || !placeholder || !limitError || !limitErrorWrap) return;
+    if (input.dataset.previewInit === "true") return;
+    input.dataset.previewInit = "true";
 
-    input.onchange = function () {
-      preview.innerHTML = "";
+    let selectedFiles = [];
 
-      const files = Array.from(input.files || []);
+    function syncInputFiles() {
+      const dt = new DataTransfer();
+      selectedFiles.forEach((file) => dt.items.add(file));
+      input.files = dt.files;
+    }
 
-      if (files.length === 0) {
+    function showLimitError(message) {
+      limitError.textContent = message;
+      limitErrorWrap.classList.remove("hidden");
+    }
+
+    function hideLimitError() {
+      limitError.textContent = "";
+      limitErrorWrap.classList.add("hidden");
+    }
+
+    function removeNewPreviews() {
+      preview.querySelectorAll(".new-image-preview").forEach((item) => item.remove());
+    }
+
+    function updateUI() {
+      const totalCount = selectedFiles.length;
+
+      if (totalCount > 0) {
+        preview.classList.remove("hidden");
+      } else {
         preview.classList.add("hidden");
-        placeholder.classList.remove("hidden");
-        return;
       }
 
-      preview.classList.remove("hidden");
-      placeholder.classList.add("hidden");
+      if (totalCount >= 5) {
+        addButton.classList.add("hidden");
+        placeholder.classList.add("hidden");
+      } else {
+        addButton.classList.remove("hidden");
+        placeholder.classList.remove("hidden");
+      }
+    }
 
-      files.forEach((file) => {
+    function renderNewPreviews() {
+      removeNewPreviews();
+
+      selectedFiles.forEach((file, index) => {
         if (!file.type.startsWith("image/")) return;
 
         const reader = new FileReader();
 
         reader.onload = function (event) {
           const item = document.createElement("div");
-          item.className = "post-preview-item";
+          item.className = "post-preview-item new-image-preview";
 
           const img = document.createElement("img");
           img.src = event.target.result;
           img.alt = file.name;
           img.className = "post-preview-image";
 
+          const removeBtn = document.createElement("button");
+          removeBtn.type = "button";
+          removeBtn.className = "image-remove-btn";
+          removeBtn.innerHTML = "&times;";
+
+          removeBtn.addEventListener("click", () => {
+            selectedFiles.splice(index, 1);
+            syncInputFiles();
+            renderNewPreviews();
+            updateUI();
+            hideLimitError();
+          });
+
           item.appendChild(img);
+          item.appendChild(removeBtn);
           preview.appendChild(item);
         };
 
         reader.readAsDataURL(file);
       });
-    };
+    }
+
+    input.addEventListener("change", function () {
+      hideLimitError();
+
+      const newFiles = Array.from(input.files || []);
+      const availableSlots = 5 - selectedFiles.length;
+
+      if (availableSlots <= 0) {
+        showLimitError("Можно загрузить не больше 5 фото");
+        syncInputFiles();
+        updateUI();
+        return;
+      }
+
+      if (newFiles.length > availableSlots) {
+        showLimitError("Можно загрузить не больше 5 фото");
+      }
+
+      const filesToAdd = newFiles.slice(0, availableSlots);
+      selectedFiles = selectedFiles.concat(filesToAdd);
+
+      syncInputFiles();
+      renderNewPreviews();
+      updateUI();
+    });
+
+    renderNewPreviews();
+    updateUI();
   }
 
-  document.addEventListener("DOMContentLoaded", initPostImagePreview);
-  document.addEventListener("turbo:load", initPostImagePreview);
+  document.addEventListener("DOMContentLoaded", initNewPostPreview);
+  document.addEventListener("turbo:load", initNewPostPreview);
 </script>

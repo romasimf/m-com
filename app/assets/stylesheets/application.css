@@ -964,26 +964,42 @@ select {
 }
 
 .post-images-preview {
-  width: 100%;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
   flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .post-preview-item {
-  width: 100%;
-  display: flex;
-  justify-content: center;
+  position: relative;
+  flex: 0 0 auto;
 }
 
 .post-preview-image {
-  max-width: 100%;
-  max-height: 320px;
-  width: auto;
-  height: auto;
-  object-fit: contain;
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
   border-radius: 16px;
   display: block;
+}
+
+.image-remove-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 18px;
+  line-height: 24px;
+  text-align: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.hidden {
+  display: none !important;
 }
