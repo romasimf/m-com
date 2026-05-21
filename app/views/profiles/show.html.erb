@@ -1,178 +1,66 @@
-<div class="profile-page">
-  <aside class="profile-sidebar">
-    <div class="profile-brand">
-      <%= image_tag "logo.png", alt: "m.com", class: "profile-brand-logo" %>
-    </div>
+<div class="mx-auto grid min-h-screen justify-center bg-[#050c14] text-[#f4f4f4] md:grid-cols-[260px_minmax(0,900px)] xl:grid-cols-[260px_minmax(700px,900px)_320px]">
+  <%= render "shared/sidebar" %>
 
-    <nav class="profile-nav">
-      <%= link_to "#", class: "profile-nav-item" do %>
-        <%= image_tag "home.png", class: "profile-nav-icon" %>
-        <span>Главная</span>
-      <% end %>
+  <main class="min-h-screen w-full max-w-[900px] border-white/10 pb-10 md:mt-3 md:border-r">
+    <div class="h-[250px] bg-gradient-to-r from-[#00ff4c] to-[#39d9e6]"></div>
 
-      <%= link_to "#", class: "profile-nav-item" do %>
-        <%= image_tag "settings.png", class: "profile-nav-icon" %>
-        <span>Настройки</span>
-      <% end %>
-
-      <%= link_to "#", class: "profile-nav-item" do %>
-        <%= image_tag "notifications.png", class: "profile-nav-icon" %>
-        <span>Уведомления</span>
-      <% end %>
-
-      <%= link_to "#", class: "profile-nav-item" do %>
-        <%= image_tag "messages.png", class: "profile-nav-icon" %>
-        <span>Сообщения</span>
-      <% end %>
-
-      <%= link_to profile_path, class: "profile-nav-item active" do %>
-        <%= image_tag "profile.png", class: "profile-nav-icon" %>
-        <span>Профиль</span>
-      <% end %>
-    </nav>
-
-    <%= link_to "Публикация", new_post_path, class: "profile-post-btn" %>
-
-    <div class="profile-logout">
-      <%= button_to "Выйти",
-      destroy_user_session_path,
-      method: :delete,
-      class: "profile-logout-btn" %>
-    </div>
-  </aside>
-
-  <main class="profile-main">
-    <div class="profile-cover"></div>
-
-    <div class="profile-header">
-      <div class="profile-avatar-wrap">
-        <%= image_tag "avatar.png", alt: "Аватар", class: "profile-avatar" %>
+    <section class="relative px-6 pb-6">
+      <div class="mb-[18px] mt-[-52px]">
+        <%= image_tag "avatar.png", alt: "Аватар", class: "h-[140px] w-[140px] rounded-full border-4 border-[#050c14] bg-[#1e1e1e] object-cover" %>
       </div>
 
-      <div class="profile-info">
-        <h1 class="profile-name">
-          <%= @user.email.split("@").first.capitalize %>
-        </h1>
-
-        <p class="profile-username">
-          @<%= @user.email.split("@").first.downcase %>
-        </p>
-
-        <div class="profile-stats">
-          <span>1мл Подписчиков</span>
-          <span>500 Подписок</span>
-        </div>
+      <div class="flex flex-col gap-2">
+        <h1 class="m-0 max-w-full break-words text-[28px] font-semibold leading-[1.15]"><%= @user.email.split("@").first.capitalize %></h1>
+        <p class="m-0 text-base text-[#6d737b]">@<%= @user.email.split("@").first.downcase %></p>
+        <div class="mt-[18px] flex gap-[30px] text-base"><span>1мл Подписчиков</span><span>500 Подписок</span></div>
       </div>
+    </section>
+
+    <div class="grid grid-cols-4 border-y border-white/10">
+      <div class="px-2.5 py-[18px] text-center text-base font-bold text-[#f4f4f4]">Посты</div>
+      <div class="px-2.5 py-[18px] text-center text-base text-[#d7d7d7]">Ответы</div>
+      <div class="px-2.5 py-[18px] text-center text-base text-[#d7d7d7]">Медиа</div>
+      <div class="px-2.5 py-[18px] text-center text-base text-[#d7d7d7]">Лайки</div>
     </div>
 
-    <div class="profile-tabs">
-      <div class="profile-tab active">Посты</div>
-      <div class="profile-tab">Ответы</div>
-      <div class="profile-tab">Медиа</div>
-      <div class="profile-tab">Лайки</div>
-    </div>
-
-    <div class="profile-content">
+    <section class="min-h-[300px]">
       <% if @posts.any? %>
         <% @posts.each do |post| %>
-          <div class="post-card">
-            <div class="post-card-date">
-              <%= post.created_at.strftime("%d.%m.%Y %H:%M") %>
+          <article class="border-b border-white/10 px-6 py-5">
+            <div class="mb-3 flex items-center justify-between gap-3 text-xs text-[#8a9098]">
+              <span><%= post.created_at.strftime("%d.%m.%Y %H:%M") %></span>
+              <div class="flex items-center gap-3">
+                <%= link_to "Редактировать", edit_post_path(post), class: "text-[#d7d7d7] hover:text-white" %>
+                <%= button_to "Удалить", post_path(post), method: :delete, form: { data: { turbo_confirm: "Удалить пост?" } }, class: "cursor-pointer border-0 bg-transparent p-0 text-red-300 hover:text-red-200" %>
+              </div>
             </div>
 
             <% if post.body.present? %>
-              <div class="post-card-body">
-                <%= simple_format(post.body, {}, wrapper_tag: "div") %>
-              </div>
+              <p class="whitespace-pre-wrap break-words text-[17px] leading-7 text-[#f4f4f4]"><%= post.body %></p>
             <% end %>
 
             <% if post.images.attached? %>
-              <div class="post-images-wrap">
-                <% post.images.each do |image| %>
-                  <%= image_tag image, class: "post-image" %>
-                <% end %>
+              <% image_count = [post.images.size, 6].min %>
+              <div class="mt-4 overflow-hidden rounded-[22px] border border-white/10 bg-black/20">
+                <div class="grid <%= post_images_grid_class(image_count) %> gap-0.5">
+                  <% post.images.each_with_index do |image, index| %>
+                    <% break if index >= 6 %>
+                    <div class="<%= post_image_wrapper_class(image_count, index) %>">
+                      <%= image_tag image, class: post_image_class(image_count, index) %>
+                    </div>
+                  <% end %>
+                </div>
               </div>
             <% end %>
-
-            <div class="post-card-actions">
-              <%= link_to "Редактировать", edit_post_path(post), class: "post-edit-btn" %>
-
-              <button
-                type="button"
-                class="post-delete-btn open-delete-modal"
-                data-post-id="<%= post.id %>">
-                Удалить
-              </button>
-
-              <%= form_with url: post_path(post),
-              method: :delete,
-              local: true,
-              html: { id: "delete-form-#{post.id}", style: "display:none;" } do %>
-              <% end %>
-            </div>
-          </div>
+          </article>
         <% end %>
       <% else %>
-        <div class="empty-posts-message">
-          У вас пока нет постов
-        </div>
+        <div class="px-6 py-10 text-[#8a9098]">Пока нет публикаций.</div>
       <% end %>
-    </div>
+    </section>
   </main>
 
-  <aside class="profile-rightbar">
-    <input type="text" placeholder="Поиск" class="profile-search">
+  <aside class="hidden px-[18px] pt-[18px] xl:block">
+    <input type="text" placeholder="Поиск" class="min-h-[50px] w-full rounded-full border-0 bg-white/10 px-[18px] text-white outline-none placeholder:text-[#8a9098]">
   </aside>
 </div>
-
-<div id="deleteModal" class="delete-modal hidden">
-  <div class="delete-modal-content">
-    <h3>Удалить пост?</h3>
-    <p>Это действие нельзя отменить.</p>
-    <div class="delete-modal-actions">
-      <button type="button" id="cancelDelete" class="modal-cancel-btn">Отмена</button>
-      <button type="button" id="confirmDelete" class="modal-delete-btn">Удалить</button>
-    </div>
-  </div>
-</div>
-
-<script>
-  function initDeleteModal() {
-    const modal = document.getElementById("deleteModal");
-    const cancelBtn = document.getElementById("cancelDelete");
-    const confirmBtn = document.getElementById("confirmDelete");
-
-    if (!modal || !cancelBtn || !confirmBtn) return;
-
-    let currentPostId = null;
-
-    document.querySelectorAll(".open-delete-modal").forEach((button) => {
-      button.onclick = function () {
-        currentPostId = this.dataset.postId;
-        modal.classList.remove("hidden");
-      };
-    });
-
-    cancelBtn.onclick = function () {
-      modal.classList.add("hidden");
-      currentPostId = null;
-    };
-
-    confirmBtn.onclick = function () {
-      if (currentPostId) {
-        const form = document.getElementById(`delete-form-${currentPostId}`);
-        if (form) form.requestSubmit();
-      }
-    };
-
-    modal.onclick = function (event) {
-      if (event.target === modal) {
-        modal.classList.add("hidden");
-        currentPostId = null;
-      }
-    };
-  }
-
-  document.addEventListener("DOMContentLoaded", initDeleteModal);
-  document.addEventListener("turbo:load", initDeleteModal);
-</script>

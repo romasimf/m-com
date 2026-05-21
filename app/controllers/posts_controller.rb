@@ -1,16 +1,27 @@
 class PostsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_post, only: [ :show, :edit, :update, :destroy ]
+  before_action :set_post, only: [:show, :edit, :update, :destroy]
+
+  MAX_IMAGES = 6
 
   def new
     @post = current_user.posts.build
   end
 
   def create
-    @post = current_user.posts.build(post_params)
+    uploaded_images = selected_images
+    @post = current_user.posts.build(post_text_params)
+
+    if uploaded_images.size > MAX_IMAGES
+      @post.errors.add(:images, "можно добавить не больше #{MAX_IMAGES} фотографий")
+      render :new, status: :unprocessable_entity
+      return
+    end
+
+    @post.images.attach(uploaded_images) if uploaded_images.any?
 
     if @post.save
-      redirect_to profile_path, notice: "Пост опубликован"
+      redirect_to profile_path
     else
       render :new, status: :unprocessable_entity
     end
@@ -23,59 +34,33 @@ class PostsController < ApplicationController
   end
 
   def update
-    removed_ids = params[:post][:removed_image_ids].to_s.split(",").reject(&:blank?)
-    new_images  = Array(params.dig(:post, :images)).reject(&:blank?)
-    new_body    = params[:post][:body].to_s.strip
+    uploaded_images = selected_images
+    remove_ids = selected_remove_image_ids
 
-    current_images = @post.images.attachments.to_a
-    remaining_images_count = current_images.count - removed_ids.count
-    remaining_images_count = 0 if remaining_images_count.negative?
+    remaining_images_count = @post.images.attachments.reject { |attachment| remove_ids.include?(attachment.id.to_s) }.size
+    total_images_count = remaining_images_count + uploaded_images.size
 
-    total_images = remaining_images_count + new_images.count
-
-    if total_images > 5
-      @post.assign_attributes(body: params[:post][:body])
-      @removed_image_ids = removed_ids
-      @post.errors.add(:images, "Можно загрузить не больше 5 фото")
+    if total_images_count > MAX_IMAGES
+      @post.errors.add(:images, "можно добавить не больше #{MAX_IMAGES} фотографий")
       render :edit, status: :unprocessable_entity
       return
     end
 
-    if new_body.blank? && total_images.zero?
-      @post.assign_attributes(body: params[:post][:body])
-      @removed_image_ids = removed_ids
-      @post.errors.add(:base, "Пост не может быть пустым")
-      render :edit, status: :unprocessable_entity
-      return
-    end
+    @post.assign_attributes(post_text_params)
 
-    newly_attached = []
-
-    if new_images.present?
-      before_ids = @post.images.attachments.pluck(:id)
-      @post.images.attach(new_images)
-      after_attachments = @post.images.attachments.reload
-      newly_attached = after_attachments.reject { |attachment| before_ids.include?(attachment.id) }
-    end
-
-    @post.assign_attributes(body: params[:post][:body])
+    @post.images.attachments.where(id: remove_ids).each(&:purge) if remove_ids.any?
+    @post.images.attach(uploaded_images) if uploaded_images.any?
 
     if @post.save
-      current_images.each do |attachment|
-        attachment.purge if removed_ids.include?(attachment.id.to_s)
-      end
-
-      redirect_to profile_path, notice: "Пост обновлён"
+      redirect_to profile_path
     else
-      newly_attached.each(&:purge)
-      @removed_image_ids = removed_ids
       render :edit, status: :unprocessable_entity
     end
   end
 
   def destroy
     @post.destroy
-    redirect_to profile_path, notice: "Пост удалён"
+    redirect_to profile_path
   end
 
   private
@@ -84,7 +69,15 @@ class PostsController < ApplicationController
     @post = current_user.posts.find(params[:id])
   end
 
-  def post_params
-    params.require(:post).permit(:body, images: [])
+  def post_text_params
+    params.require(:post).permit(:body)
+  end
+
+  def selected_images
+    Array(params.dig(:post, :images)).reject(&:blank?)
+  end
+
+  def selected_remove_image_ids
+    Array(params.dig(:post, :remove_image_ids)).reject(&:blank?)
   end
 end

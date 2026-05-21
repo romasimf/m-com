@@ -1,36 +1,28 @@
-<div class="auth-page">
-  <div class="auth-card">
-    <div class="auth-logo">
-      <%= image_tag "logo.png", alt: "m.com" %> 
-    </div>
+<div class="flex min-h-screen items-center justify-center px-6 py-6 [background:radial-gradient(circle_at_top,rgba(9,18,31,0.55),transparent_40%),linear-gradient(180deg,#07111c_0%,#050c14_100%)]">
+  <div class="w-full max-w-[460px] rounded-[28px] border border-white/15 bg-[#03070d]/95 px-8 py-9 shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
+    <%= link_to root_path, class: "mb-5 flex justify-center" do %>
+      <%= image_tag "logo.png", alt: "m.com", class: "h-auto w-[84px] object-contain" %>
+    <% end %>
+    <h1 class="m-0 mb-3 text-center text-[34px] font-semibold tracking-[-0.04em] text-[#f4f4f4]">Создайте аккаунт</h1>
+    <p class="mb-7 mt-0 text-center text-base text-[#8a9098]">Присоединяйтесь к платформе уже сегодня</p>
 
-    <h1 class="auth-title">Создайте аккаунт</h1>
-    <p class="auth-subtitle">Присоединяйтесь к платформе уже сегодня</p>
-
-    <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "auth-form" }) do |f| %>
+    <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "flex flex-col gap-[18px]" }) do |f| %>
       <%= render "devise/shared/error_messages", resource: resource %>
-
-      <div class="auth-field">
-        <%= f.label :email, "Email", class: "auth-label" %>
-        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "auth-input" %>
+      <div class="flex flex-col gap-2">
+        <%= f.label :email, "Email", class: "text-sm text-[#d9dde1]" %>
+        <%= f.email_field :email, autofocus: true, autocomplete: "email", class: "min-h-[56px] w-full rounded-2xl border border-white/15 bg-white/[0.03] px-[18px] text-base text-[#f4f4f4] outline-none focus:border-white/45 focus:bg-white/[0.05]" %>
       </div>
-
-      <div class="auth-field">
-        <%= f.label :password, "Пароль", class: "auth-label" %>
-        <%= f.password_field :password, autocomplete: "new-password", class: "auth-input" %>
+      <div class="flex flex-col gap-2">
+        <%= f.label :password, "Пароль", class: "text-sm text-[#d9dde1]" %>
+        <%= f.password_field :password, autocomplete: "new-password", class: "min-h-[56px] w-full rounded-2xl border border-white/15 bg-white/[0.03] px-[18px] text-base text-[#f4f4f4] outline-none focus:border-white/45 focus:bg-white/[0.05]" %>
       </div>
-
-      <div class="auth-field">
-        <%= f.label :password_confirmation, "Подтвердите пароль", class: "auth-label" %>
-        <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "auth-input" %>
+      <div class="flex flex-col gap-2">
+        <%= f.label :password_confirmation, "Подтвердите пароль", class: "text-sm text-[#d9dde1]" %>
+        <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "min-h-[56px] w-full rounded-2xl border border-white/15 bg-white/[0.03] px-[18px] text-base text-[#f4f4f4] outline-none focus:border-white/45 focus:bg-white/[0.05]" %>
       </div>
-
-      <%= f.submit "Создать аккаунт", class: "auth-btn auth-btn-primary" %>
+      <%= f.submit "Создать аккаунт", class: "mt-2 min-h-[58px] w-full cursor-pointer rounded-full border border-transparent bg-[#d9d9d9] text-lg font-medium tracking-[0.06em] text-[#111] transition hover:-translate-y-px hover:bg-[#cfcfcf]" %>
     <% end %>
 
-    <div class="auth-footer">
-      <p>Уже есть аккаунт?</p>
-      <%= link_to "Войти", new_user_session_path, class: "auth-link" %>
-    </div>
+    <div class="mt-[22px] text-center"><p class="mb-2 text-[#8a9098]">Уже есть аккаунт?</p><%= link_to "Войти", new_user_session_path, class: "border-b border-white/35 text-white hover:border-white/80" %></div>
   </div>
 </div>

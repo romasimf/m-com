@@ -1,0 +1,49 @@
+<div class="welcome-page">
+  <div class="welcome-left">
+    <div class="welcome-logo-wrap">
+      <%= image_tag "logo.png", alt: "m.com", class: "welcome-logo-image" %>
+    </div>
+  </div>
+
+  <div class="welcome-right">
+    <div class="welcome-brand-block">
+      <h1 class="welcome-title">
+        <span class="welcome-title-line">Место</span>
+        <span class="welcome-title-line">для</span>
+        <span class="welcome-title-line">своих</span>
+      </h1>
+    </div>
+
+    <p class="welcome-subtitle">Присоединяйся к платформе уже сегодня</p>
+
+    <% if user_signed_in? %>
+      <div class="welcome-user-block">
+        <p class="welcome-login-text">Вы уже в m.com</p>
+        <p class="welcome-user-email"><strong><%= current_user.email %></strong></p>
+
+        <%= button_to "Выйти",
+            destroy_user_session_path,
+            method: :delete,
+            class: "welcome-btn welcome-btn-secondary" %>
+      </div>
+    <% else %>
+      <div class="welcome-actions">
+        <%= link_to "Создать аккаунт",
+            new_user_registration_path,
+            class: "welcome-btn welcome-btn-primary" %>
+      </div>
+
+      <p class="welcome-terms">
+        Регистрируясь, вы соглашаетесь с Условиями использования
+        и Политикой конфиденциальности.
+      </p>
+
+      <div class="welcome-login-block">
+        <p class="welcome-login-text">Уже зарегистрированы?</p>
+        <%= link_to "Войти",
+            new_user_session_path,
+            class: "welcome-btn welcome-btn-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
