@@ -1,18 +1,65 @@
-<div class="mx-auto grid min-h-screen justify-center bg-[#050c14] text-[#f4f4f4] md:grid-cols-[260px_minmax(0,900px)] xl:grid-cols-[260px_minmax(700px,900px)_320px]">
+<div class="mx-auto grid min-h-screen justify-center overflow-x-hidden bg-[#050c14] text-[#f4f4f4] md:grid-cols-[260px_minmax(0,900px)] xl:grid-cols-[260px_minmax(700px,900px)_320px]">
   <%= render "shared/sidebar" %>
 
   <main class="min-h-screen w-full max-w-[900px] border-white/10 pb-10 md:mt-3 md:border-r">
-    <div class="h-[250px] bg-gradient-to-r from-[#00ff4c] to-[#39d9e6]"></div>
+    <div class="h-[58px] border-b border-white/10 bg-[#050c14]"></div>
 
-    <section class="relative px-6 pb-6">
-      <div class="mb-[18px] mt-[-52px]">
-        <%= image_tag "avatar.png", alt: "Аватар", class: "h-[140px] w-[140px] rounded-full border-4 border-[#050c14] bg-[#1e1e1e] object-cover" %>
+    <div class="h-[120px] sm:h-[176px] border-b border-white/10" style="background: linear-gradient(108deg, #00FF1E 0%, #00FFFF 100%);"></div>
+
+    <section class="relative px-4 pb-4 sm:px-6 sm:pb-6">
+      <div class="flex items-start justify-between gap-4">
+        <div class="mb-[18px] mt-[-40px] sm:mt-[-52px]">
+          <% if @user.avatar.attached? %>
+            <%= image_tag @user.avatar,
+                alt: "Аватар",
+                class: "h-[96px] w-[96px] rounded-full border-4 border-[#050c14] bg-[#1e1e1e] object-cover sm:h-[140px] sm:w-[140px]" %>
+          <% else %>
+            <%= image_tag "avatar.png",
+                alt: "Аватар",
+                class: "h-[96px] w-[96px] rounded-full border-4 border-[#050c14] bg-[#1e1e1e] object-cover sm:h-[140px] sm:w-[140px]" %>
+          <% end %>
+        </div>
+
+        <% unless @user == current_user %>
+          <div class="mt-5 flex shrink-0 items-center gap-3">
+            <% if current_user.following?(@user) %>
+              <%= button_to "Отписаться",
+                  user_follow_path(@user),
+                  method: :delete,
+                  form: { data: { turbo: false } },
+                  class: "inline-flex min-h-[42px] cursor-pointer items-center justify-center rounded-full border border-white/35 bg-transparent px-5 text-sm font-bold text-white transition hover:bg-white/10" %>
+            <% else %>
+              <%= button_to "Подписаться",
+                  user_follow_path(@user),
+                  method: :post,
+                  form: { data: { turbo: false } },
+                  class: "inline-flex min-h-[42px] cursor-pointer items-center justify-center rounded-full border-0 bg-[#f1f1f1] px-5 text-sm font-bold text-[#111] transition hover:bg-[#d9d9d9]" %>
+            <% end %>
+          </div>
+        <% end %>
       </div>
 
       <div class="flex flex-col gap-2">
-        <h1 class="m-0 max-w-full break-words text-[28px] font-semibold leading-[1.15]"><%= @user.email.split("@").first.capitalize %></h1>
-        <p class="m-0 text-base text-[#6d737b]">@<%= @user.email.split("@").first.downcase %></p>
-        <div class="mt-[18px] flex gap-[30px] text-base"><span>1мл Подписчиков</span><span>500 Подписок</span></div>
+        <h1 class="m-0 max-w-full break-words text-[28px] font-semibold leading-[1.15]">
+          <%= @user.name.presence || @user.email.split("@").first.capitalize %>
+        </h1>
+
+        <p class="m-0 text-base text-[#6d737b]">
+          @<%= @user.username.presence || @user.email.split("@").first.downcase %>
+        </p>
+
+        <%= turbo_stream_from "followers_#{@user.id}" %>
+
+        <div class="mt-[18px] flex gap-[30px] text-base">
+          <span id="followers_count_<%= @user.id %>">
+            <%= render "profiles/followers_count", user: @user %>
+          </span>
+
+          <span>
+            <strong><%= @following_count %></strong>
+            Подписок
+          </span>
+        </div>
       </div>
     </section>
 
@@ -24,43 +71,76 @@
     </div>
 
     <section class="min-h-[300px]">
-      <% if @posts.any? %>
+      <div id="posts-list">
+      <% if @posts.present? %>
         <% @posts.each do |post| %>
-          <article class="border-b border-white/10 px-6 py-5">
-            <div class="mb-3 flex items-center justify-between gap-3 text-xs text-[#8a9098]">
-              <span><%= post.created_at.strftime("%d.%m.%Y %H:%M") %></span>
-              <div class="flex items-center gap-3">
-                <%= link_to "Редактировать", edit_post_path(post), class: "text-[#d7d7d7] hover:text-white" %>
-                <%= button_to "Удалить", post_path(post), method: :delete, form: { data: { turbo_confirm: "Удалить пост?" } }, class: "cursor-pointer border-0 bg-transparent p-0 text-red-300 hover:text-red-200" %>
-              </div>
-            </div>
-
-            <% if post.body.present? %>
-              <p class="whitespace-pre-wrap break-words text-[17px] leading-7 text-[#f4f4f4]"><%= post.body %></p>
-            <% end %>
-
-            <% if post.images.attached? %>
-              <% image_count = [post.images.size, 6].min %>
-              <div class="mt-4 overflow-hidden rounded-[22px] border border-white/10 bg-black/20">
-                <div class="grid <%= post_images_grid_class(image_count) %> gap-0.5">
-                  <% post.images.each_with_index do |image, index| %>
-                    <% break if index >= 6 %>
-                    <div class="<%= post_image_wrapper_class(image_count, index) %>">
-                      <%= image_tag image, class: post_image_class(image_count, index) %>
-                    </div>
-                  <% end %>
-                </div>
-              </div>
-            <% end %>
-          </article>
+          <%= turbo_stream_from [post, :likes] %>
+          <%= turbo_stream_from [post, :comments] %>
+          <%= render partial: "posts/post", locals: { post: post, current_user: current_user } %>
         <% end %>
       <% else %>
-        <div class="px-6 py-10 text-[#8a9098]">Пока нет публикаций.</div>
+        <div class="px-6 py-10 text-[#8a9098]">
+          Пока нет публикаций.
+        </div>
       <% end %>
+      </div>
     </section>
   </main>
 
   <aside class="hidden px-[18px] pt-[18px] xl:block">
-    <input type="text" placeholder="Поиск" class="min-h-[50px] w-full rounded-full border-0 bg-white/10 px-[18px] text-white outline-none placeholder:text-[#8a9098]">
+    <%= form_with url: (@user == current_user ? profile_path : user_profile_path(@user)),
+        method: :get,
+        local: true,
+        class: "mb-4" do %>
+
+      <%= text_field_tag :q,
+          @search_query,
+          placeholder: "Поиск пользователей",
+          class: "min-h-[50px] w-full rounded-full border-0 bg-white/10 px-[18px] text-white outline-none placeholder:text-[#8a9098]" %>
+    <% end %>
+
+    <% if @search_query.present? %>
+      <div class="rounded-[24px] border border-white/10 bg-[#07111c]/80 p-4">
+        <h2 class="mb-4 text-lg font-bold text-white">
+          Результаты поиска
+        </h2>
+
+        <% if @search_results.any? %>
+          <div class="space-y-3">
+            <% @search_results.each do |user| %>
+              <%= link_to user_profile_path(user),
+                  class: "flex items-center gap-3 rounded-2xl p-3 transition hover:bg-white/10" do %>
+
+                <div class="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-[#1e1e1e]">
+                  <% if user.avatar.attached? %>
+                    <%= image_tag user.avatar,
+                        alt: "Аватар",
+                        class: "h-full w-full object-cover" %>
+                  <% else %>
+                    <%= image_tag "avatar.png",
+                        alt: "Аватар",
+                        class: "h-full w-full object-cover" %>
+                  <% end %>
+                </div>
+
+                <div class="min-w-0">
+                  <div class="truncate text-sm font-bold text-white">
+                    <%= user.name.presence || user.email.split("@").first.capitalize %>
+                  </div>
+
+                  <div class="truncate text-xs text-[#8a9098]">
+                    @<%= user.username.presence || user.email.split("@").first.downcase %>
+                  </div>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-sm text-[#8a9098]">
+            Пользователи не найдены.
+          </p>
+        <% end %>
+      </div>
+    <% end %>
   </aside>
 </div>

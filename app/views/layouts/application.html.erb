@@ -10,6 +10,9 @@
     <%= csp_meta_tag %>
 
     <%= yield :head %>
+    <% if user_signed_in? %>
+      <meta name="current-user-id" content="<%= current_user.id %>">
+    <% end %>
 
     <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
 
@@ -32,16 +35,330 @@
         }
       }
     </script>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
+    <style>#unread-badge-sidebar:has(#unread-badge-sidebar-count:empty),#unread-badge-mobile:has(#unread-badge-mobile-count:empty){display:none}</style>
   </head>
 
-  <body class="min-h-screen bg-[#050c14] font-victor text-[#f4f4f4] [background:radial-gradient(circle_at_top,rgba(9,18,31,0.55),transparent_42%),linear-gradient(180deg,#07111c_0%,#050c14_100%)]">
+  <body class="min-h-screen bg-[#050c14] font-victor text-[#f4f4f4] pb-16 md:pb-0 [background:radial-gradient(circle_at_top,rgba(9,18,31,0.55),transparent_42%),linear-gradient(180deg,#07111c_0%,#050c14_100%)]">
     <% if alert.present? %>
       <div class="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-full border border-red-300/30 bg-red-900/80 px-5 py-3 text-sm text-white shadow-[0_24px_60px_rgba(0,0,0,0.28)]"><%= alert %></div>
     <% end %>
 
     <%= yield %>
+
+    <%= render "shared/mobile_nav" %>
+    <%= render "shared/media_viewer" %>
+
+    <%= turbo_stream_from "unread_messages_for_user_#{current_user.id}" if current_user %>
+
+    <div id="mcom-confirm-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center">
+      <div id="mcom-confirm-backdrop" class="absolute inset-0 bg-black/60"></div>
+      <div class="relative mx-4 w-full max-w-sm rounded-2xl border border-white/10 bg-[#07111c] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.28)]">
+        <p id="mcom-confirm-text" class="mb-6 text-center text-lg text-[#f4f4f4]"></p>
+        <div class="flex justify-center gap-3">
+          <button id="mcom-confirm-cancel" type="button" class="rounded-full border border-white/15 px-5 py-2 text-sm text-[#8a9098] transition hover:bg-white/5">Отмена</button>
+          <button id="mcom-confirm-ok" type="button" class="rounded-full bg-red-500 px-5 py-2 text-sm font-bold text-white transition hover:bg-red-400">Удалить</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var confirmForm = null;
+        var confirming = false;
+
+        document.addEventListener("click", function (e) {
+          var btn = e.target.closest(".mcom-del-btn");
+          if (!btn) return;
+          if (confirming) return;
+          e.preventDefault();
+          confirmForm = btn.closest("form");
+          document.getElementById("mcom-confirm-text").textContent = btn.getAttribute("data-confirm-text") || "Подтвердите действие";
+          document.getElementById("mcom-confirm-modal").classList.remove("hidden");
+        });
+
+        document.getElementById("mcom-confirm-ok").addEventListener("click", function () {
+          document.getElementById("mcom-confirm-modal").classList.add("hidden");
+          if (confirmForm) {
+            confirming = true;
+            if (typeof confirmForm.requestSubmit === "function") {
+              confirmForm.requestSubmit();
+            } else {
+              confirmForm.querySelector(".mcom-del-btn").click();
+            }
+            confirming = false;
+            confirmForm = null;
+          }
+        });
+
+        document.getElementById("mcom-confirm-cancel").addEventListener("click", function () {
+          document.getElementById("mcom-confirm-modal").classList.add("hidden");
+          confirmForm = null;
+        });
+
+        document.getElementById("mcom-confirm-backdrop").addEventListener("click", function () {
+          document.getElementById("mcom-confirm-modal").classList.add("hidden");
+          confirmForm = null;
+        });
+      })();
+
+      (function () {
+        function setupMediaViewer() {
+          if (window.__mcomViewerAbort) window.__mcomViewerAbort.abort();
+          if (window.__mcomViewerObserver) window.__mcomViewerObserver.disconnect();
+          var ac = new AbortController();
+          window.__mcomViewerAbort = ac;
+          var sig = ac.signal;
+
+          function ids() {
+            return {
+              backdrop: document.getElementById("mcom-viewer-backdrop"),
+              closeBtn: document.getElementById("mcom-viewer-close"),
+              prevBtn: document.getElementById("mcom-viewer-prev"),
+              nextBtn: document.getElementById("mcom-viewer-next"),
+              imageEl: document.getElementById("mcom-viewer-image"),
+              videoEl: document.getElementById("mcom-viewer-video"),
+              likeBtn: document.getElementById("mcom-viewer-like-btn"),
+              likeIcon: document.getElementById("mcom-viewer-like-icon"),
+              likeCount: document.getElementById("mcom-viewer-like-count"),
+              commentCount: document.getElementById("mcom-viewer-comment-count"),
+              commentsEl: document.getElementById("mcom-viewer-comments"),
+              permalink: document.getElementById("mcom-viewer-permalink"),
+              commentForm: document.getElementById("mcom-viewer-comment-form"),
+              commentInput: document.getElementById("mcom-viewer-comment-input"),
+              mediaWrap: document.getElementById("mcom-viewer-media-wrap")
+            };
+          }
+
+          var viewer = document.getElementById("mcom-media-viewer");
+          if (!viewer) return;
+
+          var currentPostData = null;
+          var currentIndex = 0;
+
+          function stopVid() {
+            var v = document.getElementById("mcom-viewer-video");
+            if (v) { v.pause(); v.removeAttribute("src"); v.load(); }
+          }
+
+          function esc(str) {
+            var d = document.createElement("div");
+            d.appendChild(document.createTextNode(str || ""));
+            return d.innerHTML;
+          }
+
+          function renderMedia() {
+            if (!currentPostData) return;
+            var i = document.getElementById("mcom-viewer-image");
+            var v = document.getElementById("mcom-viewer-video");
+            var items = currentPostData.media;
+            var item = items[currentIndex];
+            i.classList.add("hidden");
+            v.classList.add("hidden");
+            stopVid();
+            if (item.type && item.type.startsWith("video/")) {
+              v.src = item.url; v.classList.remove("hidden"); v.load();
+            } else {
+              i.src = item.url; i.classList.remove("hidden");
+            }
+            var p = document.getElementById("mcom-viewer-prev");
+            var n = document.getElementById("mcom-viewer-next");
+            p.classList.toggle("hidden", currentIndex <= 0);
+            n.classList.toggle("hidden", currentIndex >= items.length - 1);
+          }
+
+          function renderSidebar() {
+            if (!currentPostData) return;
+            var d = currentPostData;
+            var ae = document.getElementById("mcom-viewer-avatar");
+            var af = document.getElementById("mcom-viewer-avatar-fallback");
+            if (d.avatarUrl) {
+              ae.src = d.avatarUrl; ae.classList.remove("hidden"); af.classList.add("hidden");
+            } else {
+              ae.src = ""; ae.classList.add("hidden");
+              af.textContent = (d.userName || "?").charAt(0).toUpperCase(); af.classList.remove("hidden");
+            }
+            document.getElementById("mcom-viewer-author-name").textContent = d.userName;
+            document.getElementById("mcom-viewer-author-username").textContent = "@" + d.userUsername;
+            document.getElementById("mcom-viewer-body").textContent = d.body;
+            document.getElementById("mcom-viewer-time").textContent = d.createdAt;
+            var li = document.getElementById("mcom-viewer-like-icon");
+            var lb = document.getElementById("mcom-viewer-like-btn");
+            li.textContent = d.liked ? "♥" : "♡";
+            lb.classList.toggle("text-red-300", d.liked);
+            lb.classList.toggle("text-[#8a9098]", !d.liked);
+            document.getElementById("mcom-viewer-like-count").textContent = d.likesCount;
+            document.getElementById("mcom-viewer-comment-count").textContent = d.commentsCount;
+            document.getElementById("mcom-viewer-permalink").href = d.permalink;
+          }
+
+          function navigate(delta) {
+            if (!currentPostData) return;
+            var ni = currentIndex + delta;
+            if (ni < 0 || ni >= currentPostData.media.length) return;
+            currentIndex = ni; renderMedia();
+          }
+
+          document.getElementById("mcom-viewer-close").addEventListener("click", closeViewer, { signal: sig });
+
+          document.getElementById("mcom-viewer-backdrop").addEventListener("click", closeViewer, { signal: sig });
+
+          document.getElementById("mcom-viewer-prev").addEventListener("click", function () { navigate(-1); }, { signal: sig });
+          document.getElementById("mcom-viewer-next").addEventListener("click", function () { navigate(1); }, { signal: sig });
+
+          document.addEventListener("keydown", function (e) {
+            if (viewer.classList.contains("hidden")) return;
+            if (e.key === "Escape") { closeViewer(); }
+            if (e.key === "ArrowLeft") navigate(-1);
+            if (e.key === "ArrowRight") navigate(1);
+          }, { signal: sig });
+
+          var tsx = 0;
+          document.getElementById("mcom-viewer-media-wrap").addEventListener("touchstart", function (e) { tsx = e.changedTouches[0].screenX; }, { signal: sig, passive: true });
+          document.getElementById("mcom-viewer-media-wrap").addEventListener("touchend", function (e) {
+            var tex = e.changedTouches[0].screenX;
+            if (Math.abs(tsx - tex) > 50) navigate(tsx - tex > 0 ? 1 : -1);
+          }, { signal: sig, passive: true });
+
+          var viewerObserver = null;
+
+          function syncViewerCounters() {
+            if (!currentPostData) return;
+            var pid = currentPostData.id;
+            var ce = document.getElementById("comments_list_" + pid);
+            var ve = document.getElementById("mcom-viewer-comments");
+            if (ce && ve) { ve.innerHTML = ce.innerHTML; }
+            var cnt = document.getElementById("comments_count_" + pid);
+            var vcc = document.getElementById("mcom-viewer-comment-count");
+            if (cnt && vcc) { vcc.textContent = cnt.textContent; }
+            var lc = document.getElementById("likes_count_" + pid);
+            var vlc = document.getElementById("mcom-viewer-like-count");
+            if (lc && vlc) { vlc.textContent = lc.textContent; }
+          }
+
+          function closeViewer() {
+            viewer.classList.add("hidden");
+            document.body.style.overflow = "";
+            stopVid();
+            document.querySelectorAll("video").forEach(function (v) { v.pause(); });
+            if (viewerObserver) { viewerObserver.disconnect(); viewerObserver = null; window.__mcomViewerObserver = null; }
+            currentPostData = null;
+          }
+
+          document.addEventListener("click", function (e) {
+            var t = e.target.closest("[data-post-id]");
+            if (!t) return;
+            var m = e.target.closest("[data-media-index]");
+            if (!m) return;
+            e.preventDefault();
+            try {
+              currentPostData = JSON.parse(t.dataset.postData);
+              currentIndex = parseInt(m.dataset.mediaIndex, 10);
+              document.querySelectorAll("video").forEach(function (v) { v.pause(); });
+              renderMedia();
+              var pid = currentPostData.id;
+              var cnt = document.getElementById("comments_count_" + pid);
+              if (cnt) { currentPostData.commentsCount = parseInt(cnt.textContent, 10) || 0; }
+              renderSidebar();
+              syncViewerCounters();
+              var ce = document.getElementById("comments_list_" + pid);
+              var lw = document.getElementById("likes_count_" + pid);
+              if (ce || lw) {
+                if (viewerObserver) viewerObserver.disconnect();
+                viewerObserver = new MutationObserver(syncViewerCounters);
+                window.__mcomViewerObserver = viewerObserver;
+                if (ce) viewerObserver.observe(ce, { childList: true, subtree: true });
+                if (lw) viewerObserver.observe(lw, { childList: true, subtree: true, characterData: true });
+              }
+              viewer.classList.remove("hidden");
+              document.body.style.overflow = "hidden";
+            } catch (err) { console.warn("Viewer error:", err); }
+          }, { signal: sig });
+
+          document.getElementById("mcom-viewer-like-btn").addEventListener("click", function () {
+            if (!currentPostData) return;
+            var d = currentPostData;
+            fetch(d.likeUrl, {
+              method: d.liked ? "DELETE" : "POST",
+              headers: { "X-CSRF-Token": document.querySelector("[name='csrf-token']").content }
+            }).then(function (r) {
+              if (r.ok) { d.liked = !d.liked; d.likesCount += d.liked ? 1 : -1; renderSidebar(); }
+            }).catch(function () {});
+          }, { signal: sig });
+
+          var cf = document.getElementById("mcom-viewer-comment-form");
+          if (cf) {
+            cf.addEventListener("submit", function (e) {
+              e.preventDefault();
+              if (!currentPostData) return;
+              var ci = document.getElementById("mcom-viewer-comment-input");
+              var text = ci.value.trim();
+              if (!text) return;
+              fetch(currentPostData.commentUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-CSRF-Token": document.querySelector("[name='csrf-token']").content },
+                body: JSON.stringify({ comment: { body: text } })
+              }).then(function (r) { if (!r.ok) throw new Error("Failed"); return r.json(); })
+                .then(function (c) {
+                  ci.value = "";
+                  var d = currentPostData;
+                  if (!d.comments) d.comments = [];
+                  d.comments.push(c);
+                  d.commentsCount = (d.commentsCount || 0) + 1;
+                  document.getElementById("mcom-viewer-comment-count").textContent = d.commentsCount;
+                }).catch(function () {});
+            }, { signal: sig });
+          }
+        }
+
+        setupMediaViewer();
+        document.addEventListener("turbo:load", setupMediaViewer);
+      })();
+
+      document.addEventListener("turbo:submit-end", function (e) {
+        if (!e.detail.success) return;
+        var f = e.target;
+        if (f && f.id && f.id.indexOf("comment_form_") === 0) {
+          f.querySelector("input[name='comment[body]']").value = "";
+        }
+        if (f && f.id === "new_message") {
+          var ta = f.querySelector("textarea[name='message[body]']");
+          if (ta) ta.value = "";
+        }
+      });
+
+      document.addEventListener("turbo:before-stream-render", function (e) {
+        var targetId = e.detail.newStream.target;
+        if (targetId && targetId.indexOf("conv_sidebar_") === 0) {
+          var parent = document.getElementById("sidebar-conversations");
+          var el = document.getElementById(targetId);
+          if (parent && el) parent.prepend(el);
+        }
+      });
+
+      (function () {
+        var uid = document.querySelector("meta[name='current-user-id']")?.content;
+        function mcomUpdateOwners(root) {
+          Array.from((root || document).querySelectorAll(".mcom-del-btn-wrap, .mcom-post-actions")).forEach(function (el) {
+            var puid = el.getAttribute("data-puid");
+            var cuid = el.getAttribute("data-cuid");
+            var show = uid && (puid === uid || cuid === uid);
+            el.style.display = show ? "" : "none";
+          });
+        }
+        mcomUpdateOwners();
+        document.addEventListener("turbo:load", function () { mcomUpdateOwners(); });
+        new MutationObserver(function (muts) {
+          muts.forEach(function (m) {
+            m.addedNodes.forEach(function (n) {
+              if (n.nodeType === 1) mcomUpdateOwners(n);
+            });
+          });
+        }).observe(document.body, { childList: true, subtree: true });
+      })();
+    </script>
   </body>
 </html>

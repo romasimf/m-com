@@ -1,0 +1,179 @@
+<div class="mx-auto grid min-h-screen justify-center overflow-x-hidden bg-[#050c14] text-[#f4f4f4] md:grid-cols-[260px_minmax(0,900px)] xl:grid-cols-[260px_minmax(700px,900px)_320px]">
+  <%= render "shared/sidebar" %>
+
+  <main class="min-h-screen w-full max-w-[900px] border-white/10 pb-10 md:mt-3 md:border-r">
+    <div class="border-b border-white/10 px-6 py-5">
+      <h1 class="m-0 text-[28px] font-semibold leading-tight">
+        Настройки профиля
+      </h1>
+    </div>
+
+    <section class="px-4 py-6 sm:px-6">
+      <div class="mx-auto max-w-[700px] rounded-[28px] border border-white/10 bg-[#07111c]/90 p-4 shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:p-6">
+        <%= form_with model: current_user,
+                      url: user_registration_path,
+                      method: :put,
+                      local: true,
+                      html: {
+                        multipart: true,
+                        class: "space-y-8",
+                        data: { turbo: false }
+                      } do |f| %>
+
+          <% if flash[:settings_errors].present? %>
+            <div class="rounded-2xl border border-red-300/30 bg-red-900/25 p-4 text-sm text-red-100">
+              <% flash[:settings_errors].each do |message| %>
+                <p>• <%= message %></p>
+              <% end %>
+            </div>
+          <% end %>
+          <% if notice.present? %>
+            <div class="rounded-2xl border border-green-300/30 bg-green-900/25 p-4 text-sm text-green-100">
+              <p><%= notice %></p>
+            </div>
+          <% end %>
+
+          <div>
+            <div class="mb-4 text-xl font-bold">
+              Аватар
+            </div>
+
+            <div class="flex items-center gap-5">
+              <div class="h-28 w-28 overflow-hidden rounded-full bg-[#1d9bf0]">
+                <% if current_user.avatar.attached? %>
+                  <%= image_tag current_user.avatar,
+                      class: "h-full w-full object-cover",
+                      id: "avatar-preview" %>
+                <% else %>
+                  <%= image_tag "avatar.png",
+                      class: "h-full w-full object-cover",
+                      id: "avatar-preview" %>
+                <% end %>
+              </div>
+
+              <label class="cursor-pointer rounded-full bg-[#1d9bf0] px-5 py-3 font-bold text-white transition hover:bg-[#1a8cd8]">
+                Загрузить
+
+                <%= f.file_field :avatar,
+                    accept: "image/*",
+                    class: "hidden",
+                    id: "avatar-input" %>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label class="mb-3 block text-xl font-bold">
+              Имя
+            </label>
+
+            <%= f.text_field :name,
+                placeholder: "Введите имя",
+                class: "w-full rounded-2xl border border-[#2f3336] bg-black px-5 py-4 text-lg text-white outline-none transition placeholder:text-[#6d737b] focus:border-[#1d9bf0]" %>
+          </div>
+
+          <div>
+            <label class="mb-3 block text-xl font-bold">
+              Тэг
+            </label>
+
+            <div class="relative">
+              <span class="absolute left-5 top-1/2 -translate-y-1/2 text-gray-500">
+                @
+              </span>
+
+              <%= f.text_field :username,
+                  placeholder: "username",
+                  class: "w-full rounded-2xl border border-[#2f3336] bg-black py-4 pl-10 pr-5 text-lg text-white outline-none transition placeholder:text-[#6d737b] focus:border-[#1d9bf0]" %>
+            </div>
+          </div>
+
+          <div>
+            <label class="mb-3 block text-xl font-bold">
+              Новый пароль
+            </label>
+
+            <%= f.password_field :password,
+                autocomplete: "new-password",
+                placeholder: "Введите новый пароль",
+                class: "w-full rounded-2xl border border-[#2f3336] bg-black px-5 py-4 text-lg text-white outline-none transition placeholder:text-[#6d737b] focus:border-[#1d9bf0]" %>
+
+            <p class="mt-2 text-sm text-[#8a9098]">
+              Если не хочешь менять пароль, оставь это поле пустым.
+            </p>
+          </div>
+
+          <div>
+            <label class="mb-3 block text-xl font-bold">
+              Подтверждение пароля
+            </label>
+
+            <%= f.password_field :password_confirmation,
+                autocomplete: "new-password",
+                placeholder: "Повторите пароль",
+                class: "w-full rounded-2xl border border-[#2f3336] bg-black px-5 py-4 text-lg text-white outline-none transition placeholder:text-[#6d737b] focus:border-[#1d9bf0]" %>
+          </div>
+
+          <div>
+            <label class="mb-3 block text-xl font-bold">
+              Текущий пароль
+            </label>
+
+            <%= f.password_field :current_password,
+                autocomplete: "current-password",
+                placeholder: "Введите текущий пароль",
+                class: "w-full rounded-2xl border border-[#2f3336] bg-black px-5 py-4 text-lg text-white outline-none transition placeholder:text-[#6d737b] focus:border-[#1d9bf0]" %>
+
+            <p class="mt-2 text-sm text-[#8a9098]">
+              Текущий пароль нужен для сохранения изменений.
+            </p>
+          </div>
+
+          <div class="flex flex-wrap gap-3 pt-2">
+            <%= link_to "Назад",
+                profile_path,
+                class: "inline-flex min-h-[50px] items-center justify-center rounded-full border border-white/35 px-7 text-white transition hover:bg-white/5" %>
+
+            <%= f.submit "Сохранить изменения",
+                class: "inline-flex min-h-[50px] cursor-pointer items-center justify-center rounded-full border-0 bg-[#1d9bf0] px-8 text-lg font-bold text-white transition hover:bg-[#1a8cd8]" %>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  </main>
+
+  <aside class="hidden px-[18px] pt-[18px] xl:block">
+    <input type="text"
+           placeholder="Поиск"
+           class="min-h-[50px] w-full rounded-full border-0 bg-white/10 px-[18px] text-white outline-none placeholder:text-[#8a9098]">
+  </aside>
+</div>
+
+<script>
+  function initAvatarPreview() {
+    const input = document.getElementById("avatar-input");
+    const preview = document.getElementById("avatar-preview");
+
+    if (!input || !preview) return;
+    if (input.dataset.previewInit === "true") return;
+
+    input.dataset.previewInit = "true";
+
+    input.addEventListener("change", function(event) {
+      const file = event.target.files[0];
+
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = function(loadEvent) {
+        preview.src = loadEvent.target.result;
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", initAvatarPreview);
+  document.addEventListener("turbo:load", initAvatarPreview);
+</script>

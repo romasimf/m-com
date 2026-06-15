@@ -1,0 +1,9 @@
+<% liked = post.liked_by?(local_assigns[:user]) %>
+<div id="like_button_<%= post.id %>">
+<%= button_to post_like_path(post),
+    method: liked ? :delete : :post,
+    class: "flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 #{liked ? 'text-red-300 hover:text-red-200' : 'text-[#8a9098] hover:text-red-300'}" do %>
+  <span><%= liked ? "♥" : "♡" %></span>
+  <span id="likes_count_<%= post.id %>"><%= post.likes.size %></span>
+<% end %>
+</div>

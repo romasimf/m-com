@@ -1,58 +1,51 @@
 class PostsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_post, only: [:show, :edit, :update, :destroy]
-
-  MAX_IMAGES = 6
+  before_action :set_post, only: [:edit, :update, :destroy]
+  before_action :check_owner!, only: [:edit, :update, :destroy]
 
   def new
     @post = current_user.posts.build
   end
 
   def create
-    uploaded_images = selected_images
-    @post = current_user.posts.build(post_text_params)
+    @post = current_user.posts.build(post_params)
 
-    if uploaded_images.size > MAX_IMAGES
-      @post.errors.add(:images, "можно добавить не больше #{MAX_IMAGES} фотографий")
-      render :new, status: :unprocessable_entity
-      return
+    unless validate_uploaded_files
+      return render_post_form
     end
-
-    @post.images.attach(uploaded_images) if uploaded_images.any?
 
     if @post.save
-      redirect_to profile_path
+      if params[:form_source] == "home"
+        respond_to do |format|
+          format.turbo_stream { head :ok }
+          format.html { redirect_to root_path, notice: "Пост опубликован" }
+        end
+      else
+        redirect_to root_path, notice: "Пост опубликован"
+      end
     else
-      render :new, status: :unprocessable_entity
+      render_post_form
     end
-  end
-
-  def show
   end
 
   def edit
   end
 
   def update
-    uploaded_images = selected_images
-    remove_ids = selected_remove_image_ids
+    remove_selected_images
 
-    remaining_images_count = @post.images.attachments.reject { |attachment| remove_ids.include?(attachment.id.to_s) }.size
-    total_images_count = remaining_images_count + uploaded_images.size
-
-    if total_images_count > MAX_IMAGES
-      @post.errors.add(:images, "можно добавить не больше #{MAX_IMAGES} фотографий")
-      render :edit, status: :unprocessable_entity
-      return
+    unless validate_uploaded_files
+      return render :edit, status: :unprocessable_entity
     end
 
-    @post.assign_attributes(post_text_params)
+    update_params = post_params
+    new_files = Array(update_params[:images]).reject(&:blank?)
+    update_params.delete(:images)
 
-    @post.images.attachments.where(id: remove_ids).each(&:purge) if remove_ids.any?
-    @post.images.attach(uploaded_images) if uploaded_images.any?
+    new_files.each { |file| @post.images.attach(file) }
 
-    if @post.save
-      redirect_to profile_path
+    if @post.update(update_params)
+      redirect_to profile_path, notice: "Пост обновлён"
     else
       render :edit, status: :unprocessable_entity
     end
@@ -60,24 +53,77 @@ class PostsController < ApplicationController
 
   def destroy
     @post.destroy
-    redirect_to profile_path
+    respond_to do |format|
+      format.turbo_stream { render turbo_stream: turbo_stream.remove("post_#{@post.id}") }
+      format.html { redirect_to profile_path, notice: "Пост удалён" }
+    end
   end
 
   private
 
+    def load_home_page_data
+    @posts = Post.includes(:user, images_attachments: :blob, likes: :user, comments: :user)
+                .order(created_at: :desc)
+
+    @search_query = params[:q].to_s.strip
+
+    @search_results =
+      if @search_query.present?
+        safe_query = ActiveRecord::Base.sanitize_sql_like(@search_query)
+
+        User.where.not(id: current_user.id)
+            .where("name ILIKE ?", "%#{safe_query}%")
+            .order(:name)
+            .limit(10)
+      else
+        []
+      end
+  end
+
   def set_post
-    @post = current_user.posts.find(params[:id])
+    @post = Post.find(params[:id])
   end
 
-  def post_text_params
-    params.require(:post).permit(:body)
+  def check_owner!
+    redirect_to root_path, alert: "Нет доступа" unless @post.user == current_user
   end
 
-  def selected_images
-    Array(params.dig(:post, :images)).reject(&:blank?)
+  def post_params
+    params.require(:post).permit(:body, images: [])
   end
 
-  def selected_remove_image_ids
-    Array(params.dig(:post, :remove_image_ids)).reject(&:blank?)
+  def remove_selected_images
+    Array(params[:remove_image_ids]).each do |image_id|
+      image = @post.images.attachments.find_by(id: image_id)
+      image&.purge
+    end
+  end
+
+  def validate_uploaded_files
+    files = Array(post_params[:images]).reject(&:blank?)
+    return true if files.empty?
+
+    files.each do |file|
+      unless Post::ALLOWED_TYPES.include?(file.content_type)
+        @post.errors.add(:images, "неподдерживаемый тип файла")
+        return false
+      end
+
+      if file.size > Post::MAX_FILE_SIZE
+        @post.errors.add(:images, "файл слишком большой (максимум 100 МБ)")
+        return false
+      end
+    end
+
+    true
+  end
+
+  def render_post_form
+    if params[:form_source] == "home"
+      load_home_page_data
+      render "home/index", status: :unprocessable_entity
+    else
+      render :new, status: :unprocessable_entity
+    end
   end
 end

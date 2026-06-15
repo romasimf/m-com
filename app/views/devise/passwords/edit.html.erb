@@ -1,25 +1,31 @@
-<h2>Change your password</h2>
-
-<%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put }) do |f| %>
-  <%= render "devise/shared/error_messages", resource: resource %>
-  <%= f.hidden_field :reset_password_token %>
-
-  <div class="field">
-    <p><%= f.label :password, "New password" %></p>
-    <% if @minimum_password_length %>
-      <p><em>(<%= @minimum_password_length %> characters minimum)</em></p>
+<div class="flex min-h-screen items-center justify-center px-6 py-6 [background:radial-gradient(circle_at_top,rgba(9,18,31,0.55),transparent_40%),linear-gradient(180deg,#07111c_0%,#050c14_100%)]">
+  <div class="w-full max-w-[460px] rounded-[28px] border border-white/15 bg-[#03070d]/95 px-8 py-9 shadow-[0_24px_60px_rgba(0,0,0,0.28)]">
+    <%= link_to root_path, class: "mb-5 flex justify-center" do %>
+      <%= image_tag "logo.png", alt: "m.com", class: "h-auto w-[84px] object-contain" %>
     <% end %>
-    <p><%= f.password_field :password, autofocus: true, autocomplete: "new-password" %></p>
-  </div>
+    <h1 class="m-0 mb-3 text-center text-[34px] font-semibold tracking-[-0.04em] text-[#f4f4f4]">Новый пароль</h1>
+    <p class="mb-7 mt-0 text-center text-base text-[#8a9098]">Придумайте новый пароль</p>
 
-  <div class="field">
-    <p><%= f.label :password_confirmation, "Confirm new password" %></p>
-    <p><%= f.password_field :password_confirmation, autocomplete: "new-password" %></p>
-  </div>
+    <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put, class: "flex flex-col gap-[18px]" }) do |f| %>
+      <%= render "devise/shared/error_messages", resource: resource %>
+      <%= f.hidden_field :reset_password_token %>
 
-  <div class="actions">
-    <%= f.submit "Change my password" %>
-  </div>
-<% end %>
+      <div class="flex flex-col gap-2">
+        <%= f.label :password, "Новый пароль", class: "text-sm text-[#d9dde1]" %>
+        <% if @minimum_password_length %>
+          <p class="m-0 text-xs text-[#8a9098]">Минимум <%= @minimum_password_length %> символов</p>
+        <% end %>
+        <%= f.password_field :password, autofocus: true, autocomplete: "new-password", class: "min-h-[56px] w-full rounded-2xl border border-white/15 bg-white/[0.03] px-[18px] text-base text-[#f4f4f4] outline-none focus:border-white/45 focus:bg-white/[0.05]" %>
+      </div>
 
-<%= render "devise/shared/links" %>
+      <div class="flex flex-col gap-2">
+        <%= f.label :password_confirmation, "Подтвердите пароль", class: "text-sm text-[#d9dde1]" %>
+        <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "min-h-[56px] w-full rounded-2xl border border-white/15 bg-white/[0.03] px-[18px] text-base text-[#f4f4f4] outline-none focus:border-white/45 focus:bg-white/[0.05]" %>
+      </div>
+
+      <%= f.submit "Сохранить пароль", class: "mt-2 min-h-[58px] w-full cursor-pointer rounded-full border border-transparent bg-[#d9d9d9] text-lg font-medium tracking-[0.06em] text-[#111] transition hover:-translate-y-px hover:bg-[#cfcfcf]" %>
+    <% end %>
+
+    <div class="mt-[22px] text-center"><%= link_to "Вернуться к входу", new_user_session_path, class: "border-b border-white/35 text-white hover:border-white/80" %></div>
+  </div>
+</div>

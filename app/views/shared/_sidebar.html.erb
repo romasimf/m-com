@@ -1,35 +1,44 @@
-<aside class="flex min-h-screen flex-col border-b border-white/10 bg-[#050c14]/95 px-[18px] py-5 md:sticky md:top-0 md:w-[260px] md:border-b-0 md:border-r">
-  <div class="mb-9">
-    <%= link_to profile_path, class: "inline-flex" do %>
-      <%= image_tag "logo.png", alt: "m.com", class: "block h-20 w-20 object-contain" %>
+<aside class="hidden min-h-screen flex-col border-b border-white/10 bg-[#050c14]/95 px-[18px] py-5 md:sticky md:top-0 md:flex md:w-[260px] md:border-b-0 md:border-r">
+  <div class="mb-7">
+    <%= link_to root_path, class: "inline-flex h-28 w-28 overflow-hidden rounded-[28px]" do %>
+      <%= image_tag "logo.png", alt: "m.com", class: "h-full w-full object-cover object-center" %>
     <% end %>
   </div>
 
   <nav class="flex flex-col gap-5">
+    <%= link_to root_path, class: "flex items-center gap-3.5 text-xl text-[#f4f4f4] transition hover:text-white" do %>
+      <%= image_tag "home.png", class: "h-[26px] w-[26px] shrink-0 object-contain" %>
+      <span>Главная</span>
+    <% end %>
+
+    <%= link_to settings_path, class: "flex items-center gap-3.5 text-xl text-[#f4f4f4] transition hover:text-white" do %>
+      <%= image_tag "settings.png", class: "h-[26px] w-[26px] shrink-0 object-contain" %>
+      <span>Настройки</span>
+    <% end %>
+
+    <%= link_to notifications_path, class: "flex items-center gap-3.5 text-xl text-[#f4f4f4] transition hover:text-white" do %>
+      <%= image_tag "notifications.png", class: "h-[26px] w-[26px] shrink-0 object-contain" %>
+      <span>Уведомления</span>
+    <% end %>
+
+    <%= link_to messages_path, class: "flex items-center gap-3.5 text-xl text-[#f4f4f4] transition hover:text-white" do %>
+      <%= image_tag "messages.png", class: "h-[26px] w-[26px] shrink-0 object-contain" %>
+      <span>Сообщения</span>
+      <span id="unread-badge-sidebar" class="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#1d9bf0] px-1.5 text-xs font-bold text-white"><span id="unread-badge-sidebar-count"><%= unread_messages_count(current_user).zero? ? "" : unread_messages_count(current_user) %></span></span>
+    <% end %>
+
     <%= link_to profile_path, class: "flex items-center gap-3.5 text-xl text-[#f4f4f4] transition hover:text-white" do %>
-      <%= image_tag "home.png", class: "h-[26px] w-[26px] shrink-0 object-contain" %><span>Главная</span>
-    <% end %>
-
-    <%= link_to "#", class: "flex items-center gap-3.5 text-xl text-[#f4f4f4] transition hover:text-white" do %>
-      <%= image_tag "settings.png", class: "h-[26px] w-[26px] shrink-0 object-contain" %><span>Настройки</span>
-    <% end %>
-
-    <%= link_to "#", class: "flex items-center gap-3.5 text-xl text-[#f4f4f4] transition hover:text-white" do %>
-      <%= image_tag "notifications.png", class: "h-[26px] w-[26px] shrink-0 object-contain" %><span>Уведомления</span>
-    <% end %>
-
-    <%= link_to "#", class: "flex items-center gap-3.5 text-xl text-[#f4f4f4] transition hover:text-white" do %>
-      <%= image_tag "messages.png", class: "h-[26px] w-[26px] shrink-0 object-contain" %><span>Сообщения</span>
-    <% end %>
-
-    <%= link_to profile_path, class: "flex items-center gap-3.5 text-xl font-bold text-[#f4f4f4] transition hover:text-white" do %>
-      <%= image_tag "profile.png", class: "h-[26px] w-[26px] shrink-0 object-contain" %><span>Профиль</span>
+      <%= image_tag "profile.png", class: "h-[26px] w-[26px] shrink-0 object-contain" %>
+      <span>Профиль</span>
     <% end %>
   </nav>
 
-  <%= link_to "Публикация", new_post_path, class: "mt-9 flex min-h-[58px] w-full items-center justify-center rounded-full bg-[#f1f1f1] text-lg text-[#111] transition hover:bg-[#d9d9d9]" %>
+  <%= link_to "Публикация",
+      new_post_path,
+      class: "mt-9 flex min-h-[58px] w-full items-center justify-center rounded-full bg-[#f1f1f1] text-lg text-[#111] transition hover:bg-[#d9d9d9]" %>
 
-  <div class="mt-5 md:mt-auto">
-    <%= button_to "Выйти", destroy_user_session_path, method: :delete, class: "min-h-[50px] w-full cursor-pointer rounded-full border border-white/40 bg-transparent text-lg text-white transition hover:bg-white/10" %>
-  </div>
+  <%= button_to "Выйти",
+      destroy_user_session_path,
+      method: :delete,
+      class: "mt-3 min-h-[58px] w-full cursor-pointer rounded-full border border-white/40 bg-transparent text-lg text-white transition hover:bg-white/10" %>
 </aside>
