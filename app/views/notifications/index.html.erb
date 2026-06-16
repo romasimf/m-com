@@ -1,0 +1,125 @@
+<% content_for :head do %>
+  <%= turbo_stream_from "notifications_for_user_#{current_user.id}" %>
+  <style>#notifications-messages-list:empty+#notifications-messages-empty,#notifications-posts-list:empty+#notifications-posts-empty{display:block!important}#notifications-messages-list:not(:empty)+#notifications-messages-empty,#notifications-posts-list:not(:empty)+#notifications-posts-empty{display:none!important}</style>
+<% end %>
+
+<div class="mx-auto grid min-h-screen justify-center overflow-x-hidden bg-[#050c14] text-[#f4f4f4] md:grid-cols-[260px_minmax(0,900px)] xl:grid-cols-[260px_minmax(700px,900px)_320px]">
+  <%= render "shared/sidebar" %>
+
+  <main class="min-h-screen w-full max-w-[900px] border-white/10 pb-10 md:mt-3 md:border-r">
+    <div class="sticky top-0 z-10 border-b border-white/10 bg-[#050c14]/80 px-4 py-4 backdrop-blur sm:px-6 sm:py-5">
+      <h1 class="m-0 text-xl font-semibold leading-tight sm:text-[28px]">
+        Уведомления
+      </h1>
+    </div>
+
+    <section id="notifications-messages" class="border-b border-white/10 px-4 py-4 sm:px-6 sm:py-5">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-bold text-white">
+            Новые сообщения
+          </h2>
+
+          <p class="mt-1 text-sm text-[#8a9098]">
+            Здесь отображаются сообщения, которые ты ещё не открыл.
+          </p>
+        </div>
+
+        <div id="notifications-messages-count" class="<%= 'hidden' if @unread_messages.empty? %> rounded-full bg-[#1d9bf0] px-4 py-1 text-sm font-bold text-white">
+          <%= @unread_messages.size %>
+        </div>
+      </div>
+    </section>
+
+    <div id="notifications-messages-list">
+      <%= render partial: "notifications/message_notification", collection: @unread_messages, as: :message %>
+    </div>
+
+    <div id="notifications-messages-empty" class="<%= 'hidden' unless @unread_messages.empty? %> border-b border-white/10 px-4 py-6 text-sm text-[#8a9098] sm:px-6 sm:py-8">
+      Новых непрочитанных сообщений нет.
+    </div>
+
+    <section id="notifications-posts" class="border-b border-white/10 px-4 py-4 sm:px-6 sm:py-5">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-white sm:text-xl">
+            Новые посты
+          </h2>
+
+          <p class="mt-1 text-sm text-[#8a9098]">
+            Здесь отображаются посты других пользователей, которые появились после твоего прошлого открытия уведомлений.
+          </p>
+        </div>
+
+        <div id="notifications-posts-count" class="<%= 'hidden' if @new_posts.empty? %> rounded-full bg-[#00c853] px-4 py-1 text-sm font-bold text-white">
+          <%= @new_posts.size %>
+        </div>
+      </div>
+    </section>
+
+    <div id="notifications-posts-empty" class="<%= 'hidden' unless @new_posts.empty? %> border-b border-white/10 px-4 py-6 text-sm text-[#8a9098] sm:px-6 sm:py-8">
+      Новых постов нет.
+    </div>
+
+    <div id="notifications-posts-list">
+      <%= render partial: "notifications/post_notification", collection: @new_posts, as: :post %>
+    </div>
+  </main>
+
+  <aside class="hidden px-[18px] pt-[18px] xl:block">
+    <%= form_with url: notifications_path,
+        method: :get,
+        local: true,
+        class: "mb-4" do %>
+
+      <%= text_field_tag :q,
+          @search_query,
+          placeholder: "Поиск пользователей",
+          class: "min-h-[50px] w-full rounded-full border-0 bg-white/10 px-[18px] text-white outline-none placeholder:text-[#8a9098]" %>
+    <% end %>
+
+    <% if @search_query.present? %>
+      <div class="rounded-[24px] border border-white/10 bg-[#07111c]/80 p-4">
+        <h2 class="mb-4 text-lg font-bold text-white">
+          Результаты поиска
+        </h2>
+
+        <% if @search_results.any? %>
+          <div class="space-y-3">
+            <% @search_results.each do |user| %>
+              <%= link_to user_profile_path(user),
+                  class: "flex items-center gap-3 rounded-2xl p-3 transition hover:bg-white/10" do %>
+
+                <div class="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-[#1e1e1e]">
+                  <% if user.avatar.attached? %>
+                    <%= image_tag user.avatar,
+                        alt: "Аватар",
+                        class: "h-full w-full object-cover" %>
+                  <% else %>
+                    <%= image_tag "avatar.png",
+                        alt: "Аватар",
+                        class: "h-full w-full object-cover" %>
+                  <% end %>
+                </div>
+
+                <div class="min-w-0">
+                  <div class="truncate text-sm font-bold text-white">
+                    <%= user.name.presence || user.email.split("@").first.capitalize %>
+                  </div>
+
+                  <div class="truncate text-xs text-[#8a9098]">
+                    @<%= user.username.presence || user.email.split("@").first.downcase %>
+                  </div>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-sm text-[#8a9098]">
+            Пользователи не найдены.
+          </p>
+        <% end %>
+      </div>
+    <% end %>
+  </aside>
+</div>

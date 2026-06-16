@@ -1,0 +1,2 @@
+<%= turbo_stream.prepend "notifications-messages-list", partial: "notifications/message_notification", locals: { message: message } %>
+<%= turbo_stream.replace "notifications-messages-count", partial: "notifications/count_badge", locals: { count: unread_count, target_id: "notifications-messages-count", color: "#1d9bf0" } %>

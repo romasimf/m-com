@@ -1,0 +1,167 @@
+<% post_media_items = post.images.attachments.map { |a| { url: url_for(a), type: a.blob.content_type } } %>
+<% post_comments = post.comments.includes(:user).map { |c| { userName: c.user.name.presence || c.user.email.split("@").first.capitalize, userUsername: c.user.username.presence || c.user.email.split("@").first.downcase, avatarUrl: c.user.avatar.attached? ? url_for(c.user.avatar) : "", body: c.body.to_s } } %>
+<%= turbo_stream_from [post, :likes] %>
+<%= turbo_stream_from [post, :comments] %>
+<article id="post_<%= post.id %>" class="border-b border-white/10 px-4 py-4 sm:px-6 sm:py-5"
+  data-post-id="<%= post.id %>"
+  data-author-id="<%= post.user_id %>"
+  data-post-data='<%= raw({
+    id: post.id,
+    userName: post.user.name.presence || post.user.email.split("@").first.capitalize,
+    userUsername: post.user.username.presence || post.user.email.split("@").first.downcase,
+    avatarUrl: post.user.avatar.attached? ? url_for(post.user.avatar) : "",
+    body: post.body.to_s,
+    createdAt: post.created_at.strftime("%d.%m.%Y %H:%M"),
+    media: post_media_items,
+    likesCount: post.likes.size,
+    commentsCount: post.comments.size,
+    liked: post.liked_by?(current_user),
+    likeUrl: post_like_path(post),
+    commentUrl: post_comments_path(post),
+    comments: post_comments,
+    permalink: post_path(post)
+  }.to_json) %>'>
+  <div class="mb-3 flex items-start gap-3">
+    <div class="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-[#1e1e1e]">
+      <% if post.user.avatar.attached? %>
+        <%= image_tag post.user.avatar,
+            alt: "Аватар",
+            class: "h-full w-full object-cover" %>
+      <% else %>
+        <%= image_tag "avatar.png",
+            alt: "Аватар",
+            class: "h-full w-full object-cover" %>
+      <% end %>
+    </div>
+
+    <div class="min-w-0 flex-1">
+      <div class="flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <div class="truncate text-base font-bold text-[#f4f4f4]">
+            <%= post.user.name.presence || post.user.email.split("@").first.capitalize %>
+          </div>
+
+          <div class="truncate text-sm text-[#8a9098]">
+            @<%= post.user.username.presence || post.user.email.split("@").first.downcase %>
+            ·
+            <%= post.created_at.strftime("%d.%m.%Y %H:%M") %>
+          </div>
+        </div>
+
+        <div class="post-actions mcom-post-actions flex shrink-0 items-center gap-3 text-xs" data-puid="<%= post.user_id %>">
+          <%= link_to "Редактировать",
+              edit_post_path(post),
+              class: "text-[#d7d7d7] hover:text-white" %>
+
+    <%= button_to "Удалить",
+        post_path(post),
+        method: :delete,
+        class: "cursor-pointer border-0 bg-transparent p-0 text-red-300 hover:text-red-200 mcom-del-btn",
+        data: { confirm_text: "Удалить пост?" } %>
+        </div>
+      </div>
+
+      <% if post.body.present? %>
+        <p class="mt-3 whitespace-pre-wrap break-words text-left text-[15px] leading-7 text-[#f4f4f4] sm:text-[17px]"><%= post.body.to_s.strip %></p>
+      <% end %>
+
+      <% if post.images.attached? %>
+        <% media_count = [post.images.size, 5].min %>
+
+        <div class="mt-4 overflow-hidden rounded-[22px] border border-white/10 bg-black/20">
+          <div class="grid <%= post_media_grid_class(media_count) %> gap-0.5">
+            <% post.images.each_with_index do |media, index| %>
+              <% break if index >= 5 %>
+
+              <div class="<%= post_media_wrapper_class(media_count, index) %> cursor-pointer" data-media-index="<%= index %>">
+                <% if media_is_video?(media) %>
+                  <%= video_tag url_for(media),
+                      preload: "metadata",
+                      playsinline: true,
+                      class: "#{post_media_video_class(media_count, index)} pointer-events-none" %>
+                <% else %>
+                  <%= image_tag media,
+                      class: post_media_image_class(media_count, index) %>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <div class="mt-4 border-t border-white/10 pt-4">
+        <div class="flex items-center gap-6 text-sm text-[#8a9098]">
+          <%= render "likes/like_button", post: post, user: current_user %>
+
+          <div class="flex items-center gap-2">
+            <span>💬</span>
+            <span id="comments_count_<%= post.id %>"><%= post.comments.size %></span>
+          </div>
+        </div>
+
+        <%= form_with url: post_comments_path(post),
+            method: :post,
+            id: "comment_form_#{post.id}",
+            class: "mt-4 flex gap-3" do %>
+
+          <%= text_field_tag "comment[body]",
+              nil,
+              placeholder: "Написать комментарий",
+              maxlength: 500,
+              class: "min-h-[42px] flex-1 rounded-full border border-white/10 bg-white/5 px-4 text-sm text-white outline-none placeholder:text-[#6d737b] focus:border-white/25" %>
+
+          <%= submit_tag "Отправить",
+              class: "cursor-pointer rounded-full border-0 bg-[#f1f1f1] px-5 text-sm text-[#111] transition hover:bg-[#d9d9d9]" %>
+        <% end %>
+
+        <div id="comments_<%= post.id %>">
+          <div id="comments_list_<%= post.id %>" class="mt-4 space-y-3">
+            <% if post.comments.any? %>
+              <% post.comments.each do |comment| %>
+                <div id="comment_<%= comment.id %>" class="rounded-2xl bg-white/5 px-4 py-3">
+                  <div class="mb-1 flex items-start justify-between gap-3">
+                    <div class="flex min-w-0 items-center gap-3">
+                      <div class="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-[#1e1e1e]">
+                        <% if comment.user.avatar.attached? %>
+                          <%= image_tag comment.user.avatar,
+                              alt: "Аватар",
+                              class: "h-full w-full object-cover" %>
+                        <% else %>
+                          <%= image_tag "avatar.png",
+                              alt: "Аватар",
+                              class: "h-full w-full object-cover" %>
+                        <% end %>
+                      </div>
+
+                      <div class="min-w-0">
+                        <div class="truncate text-sm font-semibold text-[#f4f4f4]">
+                          <%= comment.user.name.presence || comment.user.email.split("@").first.capitalize %>
+                        </div>
+
+                        <div class="truncate text-xs text-[#8a9098]">
+                          @<%= comment.user.username.presence || comment.user.email.split("@").first.downcase %>
+                        </div>
+                      </div>
+                    </div>
+
+                    <% if comment.user == current_user || post.user == current_user %>
+                      <%= button_to "Удалить",
+                          post_comment_path(post, comment),
+                          method: :delete,
+                          class: "cursor-pointer border-0 bg-transparent p-0 text-xs text-red-300 hover:text-red-200 mcom-del-btn",
+                          data: { confirm_text: "Удалить комментарий?" } %>
+                    <% end %>
+                  </div>
+
+                  <% if comment.body.present? %>
+                    <p class="mt-2 whitespace-pre-wrap break-words text-left text-sm leading-6 text-[#d7d7d7]"><%= comment.body.to_s.strip %></p>
+                  <% end %>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>

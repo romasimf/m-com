@@ -1,0 +1,422 @@
+<div class="mx-auto grid min-h-screen justify-center overflow-x-hidden bg-[#050c14] text-[#f4f4f4] md:grid-cols-[260px_minmax(0,900px)] xl:grid-cols-[260px_minmax(700px,900px)_320px]">
+  <%= render "shared/sidebar" %>
+
+  <main class="min-h-screen w-full max-w-[900px] border-white/10 pb-10 md:mt-3 md:border-r">
+    <div class="border-b border-white/10 px-4 py-4 sm:px-6 sm:py-5">
+      <h1 class="m-0 text-xl font-semibold leading-tight sm:text-[28px]">
+        <%= local_assigns[:title] || "Новый пост" %>
+      </h1>
+    </div>
+
+    <section class="px-4 py-6 sm:px-6">
+      <div class="rounded-[28px] border border-white/10 bg-[#07111c]/90 p-4 shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:p-6">
+        <%= form_with model: @post,
+              html: {
+                multipart: true,
+                id: "mcom-post-form-page-v6",
+                class: "space-y-5"
+              } do |f| %>
+
+          <% if @post.errors.any? %>
+            <div class="rounded-2xl border border-red-300/30 bg-red-900/25 p-4 text-sm text-red-100">
+              <% @post.errors.full_messages.each do |message| %>
+                <p>• <%= message %></p>
+              <% end %>
+            </div>
+          <% end %>
+
+          <div id="mcom-form-error-wrap-v6" class="hidden rounded-2xl border border-red-300/30 bg-red-900/25 p-4 text-sm text-red-100">
+            <p id="mcom-form-error-text-v6"></p>
+          </div>
+
+          <div class="flex gap-4">
+            <div class="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-[#1e1e1e]">
+              <% if current_user.avatar.attached? %>
+                <%= image_tag current_user.avatar,
+                    alt: "Аватар",
+                    class: "h-full w-full object-cover" %>
+              <% else %>
+                <%= image_tag "avatar.png",
+                    alt: "Аватар",
+                    class: "h-full w-full object-cover" %>
+              <% end %>
+            </div>
+
+            <div class="w-full min-w-0">
+              <%= f.text_area :body,
+                    class: "min-h-[170px] w-full resize-none border-0 bg-transparent text-xl leading-8 text-[#f4f4f4] outline-none placeholder:text-[#6d737b]",
+                    placeholder: "Напишите публикацию",
+                    rows: 5 %>
+
+              <% existing_images = @post.images.attachments.select(&:persisted?).map { |image| { id: image.id, url: url_for(image), type: image.blob.content_type } } %>
+
+              <div
+                id="mcom-post-images-gallery-v6"
+                class="mt-4 hidden overflow-hidden rounded-[22px] border border-white/10 bg-black/20"
+                data-existing-images='<%= raw existing_images.to_json %>'>
+              </div>
+
+              <p id="mcom-image-preview-counter-v6" class="mt-2 hidden text-sm text-[#8a9098]">
+                Выбрано файлов: 0 из 5
+              </p>
+
+              <div id="mcom-removed-images-container-v6"></div>
+
+              <%= f.file_field :images,
+                    multiple: true,
+                    accept: "image/*,video/*",
+                    class: "hidden",
+                    id: "mcom-post-images-input-v6",
+                    data: { max_files: 5 } %>
+
+              <div class="mt-5 flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <label for="mcom-post-images-input-v6"
+                       id="mcom-add-images-label-v6"
+                       class="inline-flex cursor-pointer items-center gap-2 text-base text-[#d7d7d7] transition hover:text-white">
+                  <span class="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-xl">+</span>
+                  <span>Добавить фото/видео <span class="text-sm text-[#8a9098]">(до 5)</span></span>
+                </label>
+
+                <div class="flex flex-wrap gap-3">
+                  <%= link_to "Назад",
+                        profile_path,
+                        class: "inline-flex min-h-[46px] items-center justify-center rounded-full border border-white/35 px-6 text-white transition hover:bg-white/5" %>
+
+                  <%= f.submit local_assigns[:button_text] || "Опубликовать",
+                        class: "inline-flex min-h-[46px] cursor-pointer items-center justify-center rounded-full border-0 bg-[#f1f1f1] px-7 text-[#111] transition hover:bg-[#d9d9d9]" %>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  </main>
+
+  <aside class="hidden px-[18px] pt-[18px] xl:block">
+    <input type="text"
+           placeholder="Поиск"
+           class="min-h-[50px] w-full rounded-full border-0 bg-white/10 px-[18px] text-white outline-none placeholder:text-[#8a9098]">
+  </aside>
+</div>
+
+<script>
+  (function () {
+    function initMcomPostFormPagePreviewV6() {
+      const form = document.getElementById("mcom-post-form-page-v6");
+      let input = document.getElementById("mcom-post-images-input-v6");
+      const gallery = document.getElementById("mcom-post-images-gallery-v6");
+      const counter = document.getElementById("mcom-image-preview-counter-v6");
+      const removedContainer = document.getElementById("mcom-removed-images-container-v6");
+      const addImagesLabel = document.getElementById("mcom-add-images-label-v6");
+      const errorWrap = document.getElementById("mcom-form-error-wrap-v6");
+      const errorText = document.getElementById("mcom-form-error-text-v6");
+      const bodyInput = form ? form.querySelector("textarea[name='post[body]']") : null;
+
+      if (!form || !input || !gallery || !counter || !removedContainer || !addImagesLabel || !errorWrap || !errorText) return;
+
+      if (window.mcomPostFormPagePreviewAbortV6) {
+        window.mcomPostFormPagePreviewAbortV6.abort();
+      }
+
+      const freshInput = input.cloneNode(true);
+      input.replaceWith(freshInput);
+      input = freshInput;
+
+      const controller = new AbortController();
+      window.mcomPostFormPagePreviewAbortV6 = controller;
+
+      const signal = controller.signal;
+      const maxFiles = Number(input.dataset.maxFiles || 5);
+
+      let existingImages = [];
+      let newFiles = [];
+      let objectUrls = [];
+      let removedImageIds = [];
+
+      try {
+        existingImages = JSON.parse(gallery.dataset.existingImages || "[]");
+      } catch (error) {
+        existingImages = [];
+      }
+
+      function showError(message) {
+        errorText.textContent = message;
+        errorWrap.classList.remove("hidden");
+      }
+
+      function hideError() {
+        errorText.textContent = "";
+        errorWrap.classList.add("hidden");
+      }
+
+      function clearObjectUrls() {
+        objectUrls.forEach(function (url) {
+          URL.revokeObjectURL(url);
+        });
+
+        objectUrls = [];
+      }
+
+      function clearNativeInput() {
+        input.value = "";
+      }
+
+      function totalCount() {
+        return existingImages.length + newFiles.length;
+      }
+
+      function bodyIsEmpty() {
+        if (!bodyInput) return true;
+
+        return bodyInput.value.trim().length === 0;
+      }
+
+      function fileKey(file) {
+        return [
+          file.name,
+          file.size,
+          file.lastModified,
+          file.type
+        ].join("-");
+      }
+
+      function syncInputFilesBeforeSubmit() {
+        const dataTransfer = new DataTransfer();
+
+        newFiles.forEach(function (file) {
+          dataTransfer.items.add(file);
+        });
+
+        input.files = dataTransfer.files;
+      }
+
+      function addRemovedInput(imageId) {
+        const stringId = String(imageId);
+
+        if (removedImageIds.includes(stringId)) return;
+
+        removedImageIds.push(stringId);
+
+        const hiddenInput = document.createElement("input");
+        hiddenInput.type = "hidden";
+        hiddenInput.name = "remove_image_ids[]";
+        hiddenInput.value = stringId;
+
+        removedContainer.appendChild(hiddenInput);
+      }
+
+      function updateCounter() {
+        const count = totalCount();
+
+        if (count === 0) {
+          counter.classList.add("hidden");
+          counter.textContent = "Выбрано файлов: 0 из " + maxFiles;
+        } else {
+          counter.classList.remove("hidden");
+          counter.textContent = "Выбрано файлов: " + count + " из " + maxFiles;
+        }
+
+        if (count >= maxFiles) {
+          addImagesLabel.classList.add("hidden");
+        } else {
+          addImagesLabel.classList.remove("hidden");
+        }
+      }
+
+      function galleryClass(count) {
+        if (count === 0) {
+          return "mt-4 hidden overflow-hidden rounded-[22px] border border-white/10 bg-black/20";
+        }
+
+        if (count === 1) {
+          return "mt-4 grid grid-cols-1 overflow-hidden rounded-[22px] border border-white/10 bg-black/20";
+        }
+
+        if (count === 2) {
+          return "mt-4 grid grid-cols-2 gap-0.5 overflow-hidden rounded-[22px] border border-white/10 bg-black/20";
+        }
+
+        if (count === 3) {
+          return "mt-4 grid grid-cols-2 gap-0.5 overflow-hidden rounded-[22px] border border-white/10 bg-black/20";
+        }
+
+        if (count === 4) {
+          return "mt-4 grid grid-cols-2 gap-0.5 overflow-hidden rounded-[22px] border border-white/10 bg-black/20";
+        }
+
+        return "mt-4 grid grid-cols-2 gap-0.5 overflow-hidden rounded-[22px] border border-white/10 bg-black/20";
+      }
+
+      function imageWrapperClass(count, index) {
+        let className = "relative overflow-hidden bg-[#111111]";
+
+        if (count === 1) {
+          className += " h-[500px]";
+        } else if (count === 2) {
+          className += " h-[280px]";
+        } else if (count === 3) {
+          className += index === 0 ? " row-span-2 h-[480px]" : " h-[238px]";
+        } else if (count === 4) {
+          className += " h-[280px]";
+        } else if (count === 5) {
+          className += index === 4 ? " col-span-2 h-[340px]" : " h-[280px]";
+        }
+
+        return className;
+      }
+
+      function createMediaItem(src, count, index, onRemove, type) {
+        const wrapper = document.createElement("div");
+        wrapper.className = imageWrapperClass(count, index);
+
+        if (type && type.startsWith("video/")) {
+          const video = document.createElement("video");
+          video.src = src;
+          video.className = "h-full w-full object-cover bg-black";
+          video.muted = true;
+          video.loop = true;
+          video.preload = "metadata";
+          video.addEventListener("mouseenter", function () { video.play(); });
+          video.addEventListener("mouseleave", function () { video.pause(); });
+          wrapper.appendChild(video);
+        } else {
+          const image = document.createElement("img");
+          image.src = src;
+          image.className = "h-full w-full object-cover";
+          wrapper.appendChild(image);
+        }
+
+        const removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.innerHTML = "×";
+        removeButton.className = "absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/70 text-2xl leading-none text-white transition hover:bg-red-500";
+
+        removeButton.addEventListener("click", onRemove, { signal: signal });
+
+        wrapper.appendChild(removeButton);
+
+        return wrapper;
+      }
+
+      function renderGallery() {
+        clearObjectUrls();
+        gallery.innerHTML = "";
+
+        const count = totalCount();
+        gallery.className = galleryClass(count);
+
+        if (count === 0) {
+          updateCounter();
+          return;
+        }
+
+        existingImages.forEach(function (imageData, index) {
+          const item = createMediaItem(imageData.url, count, index, function () {
+            addRemovedInput(imageData.id);
+
+            existingImages = existingImages.filter(function (item) {
+              return String(item.id) !== String(imageData.id);
+            });
+
+            clearNativeInput();
+            hideError();
+            renderGallery();
+          }, imageData.type);
+
+          gallery.appendChild(item);
+        });
+
+        newFiles.forEach(function (file, fileIndex) {
+          const imageUrl = URL.createObjectURL(file);
+          objectUrls.push(imageUrl);
+
+          const index = existingImages.length + fileIndex;
+
+          const item = createMediaItem(imageUrl, count, index, function () {
+            newFiles.splice(fileIndex, 1);
+
+            clearNativeInput();
+            hideError();
+            renderGallery();
+          }, file.type);
+
+          gallery.appendChild(item);
+        });
+
+        updateCounter();
+      }
+
+      input.addEventListener("click", function () {
+        clearNativeInput();
+      }, { signal: signal });
+
+      input.addEventListener("change", function (event) {
+        hideError();
+
+        const pickedFiles = Array.from(event.target.files || []);
+        const existingKeys = new Set(newFiles.map(fileKey));
+
+        pickedFiles.forEach(function (file) {
+          if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) return;
+
+          if (totalCount() >= maxFiles) {
+            showError("Можно добавить не больше " + maxFiles + " файлов");
+            return;
+          }
+
+          const key = fileKey(file);
+
+          if (!existingKeys.has(key)) {
+            newFiles.push(file);
+            existingKeys.add(key);
+          }
+        });
+
+        clearNativeInput();
+        renderGallery();
+      }, { signal: signal });
+
+      if (bodyInput) {
+        bodyInput.addEventListener("input", function () {
+          if (!bodyIsEmpty() || totalCount() > 0) {
+            hideError();
+          }
+        }, { signal: signal });
+      }
+
+      form.addEventListener("submit", function (event) {
+        if (bodyIsEmpty() && totalCount() === 0) {
+          event.preventDefault();
+
+          showError("Пост не может быть пустым");
+
+          if (bodyInput) {
+            bodyInput.focus();
+          }
+
+          return;
+        }
+
+        hideError();
+        syncInputFilesBeforeSubmit();
+      }, { signal: signal });
+
+      document.addEventListener("turbo:before-cache", function () {
+        newFiles = [];
+        clearNativeInput();
+        clearObjectUrls();
+
+        gallery.innerHTML = "";
+        gallery.className = "mt-4 hidden overflow-hidden rounded-[22px] border border-white/10 bg-black/20";
+
+        updateCounter();
+      }, { signal: signal });
+
+      renderGallery();
+    }
+
+    document.addEventListener("DOMContentLoaded", initMcomPostFormPagePreviewV6);
+    document.addEventListener("turbo:load", initMcomPostFormPagePreviewV6);
+  })();
+</script>

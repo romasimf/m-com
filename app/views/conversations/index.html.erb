@@ -1,0 +1,98 @@
+<% content_for :head, '<meta name="turbo-cache-control" content="no-cache">'.html_safe %>
+<div class="mx-auto grid min-h-screen justify-center overflow-x-hidden bg-[#050c14] text-[#f4f4f4] md:grid-cols-[260px_minmax(0,900px)] xl:grid-cols-[260px_minmax(700px,900px)_320px]">
+  <%= render "shared/sidebar" %>
+
+  <main class="min-h-screen w-full max-w-[900px] border-white/10 pb-10 md:mt-3 md:border-r">
+    <div class="border-b border-white/10 px-4 py-4 sm:px-6 sm:py-5">
+      <h1 class="m-0 text-xl font-semibold leading-tight sm:text-[28px]">
+        Сообщения
+      </h1>
+    </div>
+
+<%= turbo_stream_from "sidebar_for_user_#{current_user.id}" %>
+
+    <section class="min-h-[720px] border-b border-white/10 lg:grid lg:grid-cols-[330px_minmax(0,1fr)]">
+      <aside class="border-b border-white/10 lg:border-b-0 lg:border-r">
+        <div class="border-b border-white/10 p-4">
+          <%= form_with url: messages_path, method: :get, local: true do %>
+            <%= text_field_tag :q,
+                @search_query,
+                placeholder: "Поиск пользователей",
+                class: "min-h-[46px] w-full rounded-full border border-white/10 bg-white/10 px-[18px] text-white outline-none placeholder:text-[#8a9098] focus:border-white/25" %>
+          <% end %>
+        </div>
+
+        <% if @search_query.present? %>
+          <div class="border-b border-white/10 p-4">
+            <h2 class="mb-3 text-sm font-bold text-[#8a9098]">
+              Найденные пользователи
+            </h2>
+
+            <% if @search_results.any? %>
+              <div class="space-y-2">
+                <% @search_results.each do |user| %>
+                  <%= button_to messages_path,
+                      method: :post,
+                      params: { user_id: user.id },
+                      form: { class: "w-full" },
+                      class: "flex w-full cursor-pointer items-center gap-3 rounded-2xl border-0 bg-transparent p-3 text-left transition hover:bg-white/10" do %>
+
+                    <div class="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-[#1e1e1e]">
+                      <% if user.avatar.attached? %>
+                        <%= image_tag user.avatar, class: "h-full w-full object-cover" %>
+                      <% else %>
+                        <%= image_tag "avatar.png", class: "h-full w-full object-cover" %>
+                      <% end %>
+                    </div>
+
+                    <div class="min-w-0">
+                      <div class="truncate text-sm font-bold text-white">
+                        <%= user.display_name %>
+                      </div>
+
+                      <div class="truncate text-xs text-[#8a9098]">
+                        @<%= user.tag_name %>
+                      </div>
+                    </div>
+                  <% end %>
+                <% end %>
+              </div>
+            <% else %>
+              <p class="text-sm text-[#8a9098]">
+                Пользователи не найдены.
+              </p>
+            <% end %>
+          </div>
+        <% end %>
+
+        <div id="sidebar-conversations">
+          <% if @conversations.any? %>
+            <% @conversations.each do |conversation| %>
+              <div id="conv_sidebar_<%= conversation.id %>">
+                <%= render "conversations/conversation_sidebar", conversation: conversation %>
+              </div>
+            <% end %>
+          <% else %>
+            <div class="px-5 py-8 text-sm text-[#8a9098]">
+              Пока нет диалогов. Найди пользователя через поиск.
+            </div>
+          <% end %>
+        </div>
+      </aside>
+
+      <div class="flex min-h-[520px] items-center justify-center px-6 py-12 text-center">
+        <div>
+          <h2 class="text-[36px] font-black leading-tight sm:text-[44px]">
+            Ваши сообщения
+          </h2>
+
+          <p class="mt-4 text-[#8a9098]">
+            Выберите диалог слева или найдите пользователя для нового сообщения.
+          </p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="hidden xl:block"></aside>
+</div>

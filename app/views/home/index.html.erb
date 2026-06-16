@@ -1,0 +1,413 @@
+<div class="mx-auto grid min-h-screen justify-center overflow-x-hidden bg-[#050c14] text-[#f4f4f4] md:grid-cols-[260px_minmax(0,900px)] xl:grid-cols-[260px_minmax(700px,900px)_320px]">
+  <%= render "shared/sidebar" %>
+
+  <main class="min-h-screen w-full max-w-[900px] border-white/10 pb-10 md:mt-3 md:border-r">
+    <div class="sticky top-0 z-10 border-b border-white/10 bg-[#050c14]/80 px-4 py-4 backdrop-blur sm:px-6 sm:py-5">
+      <h2 class="text-xl font-semibold leading-tight sm:text-[28px]">Главная</h2>
+    </div>
+
+    <div class="relative z-[1] mx-3 my-3 rounded-[22px] border border-white/10 bg-[#07111c]/95 px-4 py-4 shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:mx-6 sm:my-5 sm:rounded-[28px] sm:px-6">
+      <%= form_with model: @post,
+          url: posts_path,
+          html: {
+            multipart: true,
+            id: "mcom-home-post-form",
+            class: "w-full"
+          } do |f| %>
+
+        <%= hidden_field_tag :form_source, "home" %>
+
+        <% if @post.errors.any? %>
+          <div class="mb-4 rounded-2xl border border-red-300/30 bg-red-900/25 p-4 text-sm text-red-100">
+            <% @post.errors.full_messages.each do |message| %>
+              <p>• <%= message %></p>
+            <% end %>
+          </div>
+        <% end %>
+
+        <div id="mcom-home-post-error-wrap" class="mb-4 hidden rounded-2xl border border-red-300/30 bg-red-900/25 p-4 text-sm text-red-100">
+          <p id="mcom-home-post-error-text"></p>
+        </div>
+
+        <div class="flex gap-4">
+          <div class="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-[#1e1e1e]">
+            <% if current_user.avatar.attached? %>
+              <%= image_tag current_user.avatar,
+                  alt: "Аватар",
+                  class: "h-full w-full object-cover" %>
+            <% else %>
+              <%= image_tag "avatar.png",
+                  alt: "Аватар",
+                  class: "h-full w-full object-cover" %>
+            <% end %>
+          </div>
+
+          <div class="min-w-0 flex-1">
+            <%= f.text_area :body,
+                placeholder: "Что происходит?",
+                rows: 3,
+                class: "w-full resize-none bg-transparent text-[24px] text-white outline-none placeholder:text-[#8a9098]" %>
+
+            <div
+              id="mcom-home-images-preview"
+              class="mt-4 hidden gap-2 overflow-hidden rounded-2xl">
+            </div>
+
+            <p id="mcom-home-image-preview-counter" class="mt-2 hidden text-sm text-[#8a9098]">
+              Выбрано файлов: 0 из 5
+            </p>
+
+            <div class="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
+              <label for="mcom-home-post-images-input" class="cursor-pointer rounded-full px-3 py-2 font-medium text-[#1d9bf0] hover:bg-[#0a171f]">
+                Фото/Видео
+              </label>
+
+              <%= f.file_field :images,
+                  multiple: true,
+                  accept: "image/*,video/*",
+                  class: "hidden",
+                  id: "mcom-home-post-images-input",
+                  data: { max_files: 5 } %>
+
+              <%= f.submit "Опубликовать",
+                  class: "cursor-pointer rounded-full bg-[#1d9bf0] px-6 py-2 font-bold text-white hover:bg-[#1a8cd8]" %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <section class="min-h-[300px]">
+      <%= turbo_stream_from "posts" %>
+      <div id="posts-list">
+      <% if @posts.present? %>
+        <% @posts.each do |post| %>
+          <%= turbo_stream_from [post, :likes] %>
+          <%= turbo_stream_from [post, :comments] %>
+          <%= render partial: "posts/post", locals: { post: post, current_user: current_user } %>
+        <% end %>
+      <% else %>
+        <div class="px-6 py-10 text-[#8a9098]">
+          Пока нет публикаций.
+        </div>
+      <% end %>
+      </div>
+    </section>
+  </main>
+
+  <aside class="hidden px-[18px] pt-[18px] xl:block">
+    <%= form_with url: root_path,
+        method: :get,
+        local: true,
+        class: "mb-4" do %>
+
+      <%= text_field_tag :q,
+          @search_query,
+          placeholder: "Поиск пользователей",
+          class: "min-h-[50px] w-full rounded-full border-0 bg-white/10 px-[18px] text-white outline-none placeholder:text-[#8a9098]" %>
+    <% end %>
+
+    <% if @search_query.present? %>
+      <div class="rounded-[24px] border border-white/10 bg-[#07111c]/80 p-4">
+        <h2 class="mb-4 text-lg font-bold text-white">
+          Результаты поиска
+        </h2>
+
+        <% if @search_results.any? %>
+          <div class="space-y-3">
+            <% @search_results.each do |user| %>
+              <%= link_to user_profile_path(user),
+                  class: "flex items-center gap-3 rounded-2xl p-3 transition hover:bg-white/10" do %>
+
+                <div class="h-11 w-11 shrink-0 overflow-hidden rounded-full bg-[#1e1e1e]">
+                  <% if user.avatar.attached? %>
+                    <%= image_tag user.avatar,
+                        alt: "Аватар",
+                        class: "h-full w-full object-cover" %>
+                  <% else %>
+                    <%= image_tag "avatar.png",
+                        alt: "Аватар",
+                        class: "h-full w-full object-cover" %>
+                  <% end %>
+                </div>
+
+                <div class="min-w-0">
+                  <div class="truncate text-sm font-bold text-white">
+                    <%= user.name.presence || user.email.split("@").first.capitalize %>
+                  </div>
+
+                  <div class="truncate text-xs text-[#8a9098]">
+                    @<%= user.username.presence || user.email.split("@").first.downcase %>
+                  </div>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-sm text-[#8a9098]">
+            Пользователи не найдены.
+          </p>
+        <% end %>
+      </div>
+    <% end %>
+  </aside>
+</div>
+
+<script>
+  (function () {
+    function initMcomHomePostForm() {
+      const form = document.getElementById("mcom-home-post-form");
+      let input = document.getElementById("mcom-home-post-images-input");
+      const preview = document.getElementById("mcom-home-images-preview");
+      const counter = document.getElementById("mcom-home-image-preview-counter");
+      const errorWrap = document.getElementById("mcom-home-post-error-wrap");
+      const errorText = document.getElementById("mcom-home-post-error-text");
+      const bodyInput = form ? form.querySelector("textarea[name='post[body]']") : null;
+
+      if (!form || !input || !preview || !counter || !errorWrap || !errorText) return;
+
+      if (window.mcomHomePostFormAbort) {
+        window.mcomHomePostFormAbort.abort();
+      }
+
+      const freshInput = input.cloneNode(true);
+      input.replaceWith(freshInput);
+      input = freshInput;
+
+      const controller = new AbortController();
+      window.mcomHomePostFormAbort = controller;
+
+      const signal = controller.signal;
+      const maxFiles = Number(input.dataset.maxFiles || 5);
+
+      let selectedFiles = [];
+      let objectUrls = [];
+
+      function showError(message) {
+        errorText.textContent = message;
+        errorWrap.classList.remove("hidden");
+      }
+
+      function hideError() {
+        errorText.textContent = "";
+        errorWrap.classList.add("hidden");
+      }
+
+      function bodyIsEmpty() {
+        if (!bodyInput) return true;
+        return bodyInput.value.trim().length === 0;
+      }
+
+      function clearObjectUrls() {
+        objectUrls.forEach(function (url) {
+          URL.revokeObjectURL(url);
+        });
+
+        objectUrls = [];
+      }
+
+      function clearNativeInput() {
+        input.value = "";
+      }
+
+      function fileKey(file) {
+        return [
+          file.name,
+          file.size,
+          file.lastModified,
+          file.type
+        ].join("-");
+      }
+
+      function syncInputFilesBeforeSubmit() {
+        const dataTransfer = new DataTransfer();
+
+        selectedFiles.forEach(function (file) {
+          dataTransfer.items.add(file);
+        });
+
+        input.files = dataTransfer.files;
+      }
+
+      function updateCounter() {
+        if (selectedFiles.length === 0) {
+          counter.classList.add("hidden");
+          counter.textContent = "Выбрано файлов: 0 из " + maxFiles;
+        } else {
+          counter.classList.remove("hidden");
+          counter.textContent = "Выбрано файлов: " + selectedFiles.length + " из " + maxFiles;
+        }
+      }
+
+      function gridClass(count) {
+        if (count === 1) return "mt-4 grid grid-cols-1 gap-2 overflow-hidden rounded-2xl";
+        if (count === 2) return "mt-4 grid grid-cols-2 gap-2 overflow-hidden rounded-2xl";
+        if (count === 3) return "mt-4 grid grid-cols-2 gap-2 overflow-hidden rounded-2xl";
+        if (count === 4) return "mt-4 grid grid-cols-2 gap-2 overflow-hidden rounded-2xl";
+        return "mt-4 grid grid-cols-2 gap-2 overflow-hidden rounded-2xl";
+      }
+
+      function itemClass(count, index) {
+        let classes = "relative overflow-hidden rounded-2xl bg-black/30";
+
+        if (count === 1) {
+          classes += " h-[500px]";
+        } else if (count === 2) {
+          classes += " h-[280px]";
+        } else if (count === 3) {
+          classes += index === 0 ? " row-span-2 h-[480px]" : " h-[238px]";
+        } else if (count === 4) {
+          classes += " h-[280px]";
+        } else if (count === 5) {
+          classes += index === 4 ? " col-span-2 h-[340px]" : " h-[280px]";
+        }
+
+        return classes;
+      }
+
+      function renderPreview() {
+        clearObjectUrls();
+        preview.innerHTML = "";
+
+        const count = selectedFiles.length;
+
+        if (count === 0) {
+          preview.className = "mt-4 hidden gap-2 overflow-hidden rounded-2xl";
+          updateCounter();
+          return;
+        }
+
+        preview.className = gridClass(count);
+
+        selectedFiles.forEach(function (file, index) {
+          const fileUrl = URL.createObjectURL(file);
+          objectUrls.push(fileUrl);
+
+          const wrapper = document.createElement("div");
+          wrapper.className = itemClass(count, index);
+
+          if (file.type && file.type.startsWith("video/")) {
+            const video = document.createElement("video");
+            video.src = fileUrl;
+            video.className = "h-full w-full object-cover bg-black";
+            video.muted = true;
+            video.preload = "metadata";
+            video.addEventListener("mouseenter", function () { video.play(); });
+            video.addEventListener("mouseleave", function () { video.pause(); });
+            wrapper.appendChild(video);
+          } else {
+            const image = document.createElement("img");
+            image.src = fileUrl;
+            image.alt = file.name;
+            image.className = "h-full w-full object-cover";
+            wrapper.appendChild(image);
+          }
+
+          const removeButton = document.createElement("button");
+          removeButton.type = "button";
+          removeButton.textContent = "×";
+          removeButton.className = "absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/75 text-xl font-bold leading-none text-white transition hover:bg-black";
+
+          removeButton.addEventListener("click", function () {
+            selectedFiles.splice(index, 1);
+            clearNativeInput();
+
+            if (!bodyIsEmpty() || selectedFiles.length > 0) {
+              hideError();
+            }
+
+            renderPreview();
+          }, { signal: signal });
+
+          wrapper.appendChild(removeButton);
+          preview.appendChild(wrapper);
+        });
+
+        updateCounter();
+      }
+
+      input.addEventListener("click", function () {
+        clearNativeInput();
+      }, { signal: signal });
+
+      input.addEventListener("change", function (event) {
+        hideError();
+
+        const pickedFiles = Array.from(event.target.files || []);
+        const existingKeys = new Set(selectedFiles.map(fileKey));
+
+        pickedFiles.forEach(function (file) {
+          if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) return;
+
+          if (selectedFiles.length >= maxFiles) {
+            showError("Можно добавить не больше " + maxFiles + " файлов");
+            return;
+          }
+
+          const key = fileKey(file);
+
+          if (!existingKeys.has(key)) {
+            selectedFiles.push(file);
+            existingKeys.add(key);
+          }
+        });
+
+        clearNativeInput();
+        renderPreview();
+      }, { signal: signal });
+
+      if (bodyInput) {
+        bodyInput.addEventListener("input", function () {
+          if (!bodyIsEmpty() || selectedFiles.length > 0) {
+            hideError();
+          }
+        }, { signal: signal });
+      }
+
+      form.addEventListener("submit", function (event) {
+        if (bodyIsEmpty() && selectedFiles.length === 0) {
+          event.preventDefault();
+          showError("Пост не может быть пустым");
+
+          if (bodyInput) {
+            bodyInput.focus();
+          }
+
+          return;
+        }
+
+        hideError();
+        syncInputFilesBeforeSubmit();
+      }, { signal: signal });
+
+      form.addEventListener("turbo:submit-end", function (e) {
+        if (!e.detail.success) return;
+        if (bodyInput) bodyInput.value = "";
+        selectedFiles = [];
+        clearNativeInput();
+        clearObjectUrls();
+        preview.innerHTML = "";
+        preview.className = "mt-4 hidden gap-2 overflow-hidden rounded-2xl";
+        hideError();
+        updateCounter();
+      }, { signal: signal });
+
+      document.addEventListener("turbo:before-cache", function () {
+        selectedFiles = [];
+        clearNativeInput();
+        clearObjectUrls();
+
+        preview.innerHTML = "";
+        preview.className = "mt-4 hidden gap-2 overflow-hidden rounded-2xl";
+
+        updateCounter();
+      }, { signal: signal });
+
+      renderPreview();
+    }
+
+    document.addEventListener("DOMContentLoaded", initMcomHomePostForm);
+    document.addEventListener("turbo:load", initMcomHomePostForm);
+  })();
+
+</script>

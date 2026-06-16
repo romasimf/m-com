@@ -1,0 +1,55 @@
+<div id="mcom-media-viewer" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/85" id="mcom-viewer-backdrop"></div>
+
+  <div class="relative flex h-full w-full flex-col lg:flex-row">
+    <button id="mcom-viewer-close" type="button" class="absolute left-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-xl text-white transition hover:bg-black/80 lg:left-4 lg:top-4 lg:h-10 lg:w-10 lg:text-2xl">×</button>
+
+    <div id="mcom-viewer-media-area" class="relative flex min-h-0 flex-1 items-center justify-center p-2 lg:p-4">
+      <button id="mcom-viewer-prev" type="button" class="absolute left-2 top-1/2 z-10 hidden -translate-y-1/2 items-center justify-center rounded-full bg-black/60 p-2 text-lg text-white transition hover:bg-black/80 lg:p-3 lg:text-xl">←</button>
+      <div id="mcom-viewer-media-wrap" class="relative flex max-h-full max-w-full items-center justify-center">
+        <img id="mcom-viewer-image" class="hidden max-h-[60vh] max-w-full rounded-lg object-contain lg:max-h-[85vh]" src="" alt="">
+        <video id="mcom-viewer-video" class="hidden max-h-[60vh] max-w-full rounded-lg lg:max-h-[85vh]" controls autoplay playsinline></video>
+      </div>
+      <button id="mcom-viewer-next" type="button" class="absolute right-2 top-1/2 z-10 hidden -translate-y-1/2 items-center justify-center rounded-full bg-black/60 p-2 text-lg text-white transition hover:bg-black/80 lg:p-3 lg:text-xl">→</button>
+    </div>
+
+    <aside id="mcom-viewer-sidebar" class="flex flex-col w-full shrink-0 border-t border-white/10 bg-[#050c14] p-4 lg:w-[380px] lg:border-l lg:border-t-0 lg:p-5">
+      <div class="flex items-center gap-3 border-b border-white/10 pb-4">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#1e1e1e] text-sm font-bold text-[#8a9098]">
+          <img id="mcom-viewer-avatar" class="h-full w-full object-cover" src="" alt="">
+          <span id="mcom-viewer-avatar-fallback" class="hidden"></span>
+        </div>
+        <div class="min-w-0">
+          <div id="mcom-viewer-author-name" class="truncate text-base font-bold text-[#f4f4f4]"></div>
+          <div id="mcom-viewer-author-username" class="truncate text-sm text-[#8a9098]"></div>
+        </div>
+      </div>
+
+      <div id="mcom-viewer-body" class="mt-4 whitespace-pre-wrap break-words text-[15px] leading-7 text-[#f4f4f4]"></div>
+
+      <div id="mcom-viewer-time" class="mt-2 text-sm text-[#6d737b]"></div>
+
+      <div class="mt-4 border-t border-white/10 pt-4">
+        <div class="flex items-center gap-6 text-sm text-[#8a9098]">
+          <button id="mcom-viewer-like-btn" type="button" class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-[#8a9098] transition hover:text-red-300">
+            <span id="mcom-viewer-like-icon">♡</span>
+            <span id="mcom-viewer-like-count">0</span>
+          </button>
+          <div class="flex items-center gap-2">
+            <span>💬</span>
+            <span id="mcom-viewer-comment-count">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="mcom-viewer-comments" class="mt-4 flex-1 space-y-3 overflow-y-auto"></div>
+
+      <form id="mcom-viewer-comment-form" class="mt-3 flex gap-2 border-t border-white/10 pt-3" data-turbo="false">
+        <input id="mcom-viewer-comment-input" type="text" placeholder="Написать комментарий..." class="min-w-0 flex-1 rounded-full bg-white/10 px-4 py-2 text-sm text-[#f4f4f4] placeholder-[#6d737b] outline-none focus:ring-1 focus:ring-[#1d9bf0]">
+        <button type="submit" class="shrink-0 rounded-full bg-[#1d9bf0] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#1a8cd8] disabled:opacity-50">→</button>
+      </form>
+
+      <a id="mcom-viewer-permalink" class="mt-4 block text-center text-sm text-[#1d9bf0] transition hover:underline" target="_blank">Открыть пост</a>
+    </aside>
+  </div>
+</div>

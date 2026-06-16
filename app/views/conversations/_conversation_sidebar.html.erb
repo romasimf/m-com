@@ -1,0 +1,28 @@
+<% other_user = conversation.other_user(current_user) %>
+<% last_message = conversation.last_message %>
+<% unread = conversation.unread_for?(current_user) %>
+<%= link_to conversation_path(conversation),
+    class: "flex border-b border-white/10 px-5 py-4 transition hover:bg-white/5 #{unread ? 'bg-white/[0.04]' : ''}" do %>
+  <div class="relative mr-3 h-12 w-12 shrink-0 overflow-hidden rounded-full bg-[#1e1e1e]">
+    <% if other_user.avatar.attached? %>
+      <%= image_tag other_user.avatar, class: "h-full w-full object-cover" %>
+    <% else %>
+      <%= image_tag "avatar.png", class: "h-full w-full object-cover" %>
+    <% end %>
+    <% if unread %>
+      <div class="absolute right-0 top-0 h-3 w-3 rounded-full border-2 border-[#050c14] bg-[#1d9bf0]"></div>
+    <% end %>
+  </div>
+  <div class="min-w-0 flex-1">
+    <div class="truncate font-bold text-[#f4f4f4]">
+      <%= other_user.display_name %>
+    </div>
+    <div class="mt-1 truncate text-sm <%= unread ? 'font-semibold text-[#f4f4f4]' : 'text-[#8a9098]' %>">
+      <% if last_message.present? %>
+        <%= last_message.body %>
+      <% else %>
+        Диалог создан
+      <% end %>
+    </div>
+  </div>
+<% end %>

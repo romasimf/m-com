@@ -1,0 +1,11 @@
+<% mine = message.user_id == local_assigns[:viewer_id] %>
+<div id="<%= dom_id(message) %>" class="flex <%= mine ? 'justify-end' : 'justify-start' %>">
+  <div class="max-w-[75%]">
+    <div class="<%= mine ? 'bg-[#1d9bf0] text-white' : 'bg-white/10 text-[#f4f4f4]' %> rounded-[24px] px-4 py-3">
+      <p class="whitespace-pre-wrap break-words text-sm leading-6"><%= message.body.to_s.strip %></p>
+    </div>
+    <div class="<%= mine ? 'text-right' : 'text-left' %> mt-1 text-xs text-[#8a9098]">
+      <%= message.created_at.strftime("%d.%m.%Y %H:%M") %>
+    </div>
+  </div>
+</div>

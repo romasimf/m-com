@@ -1,0 +1,29 @@
+<div id="<%= dom_id(comment) %>" class="rounded-2xl bg-white/5 px-4 py-3">
+  <div class="mb-1 flex items-start justify-between gap-3">
+    <div class="flex min-w-0 items-center gap-3">
+      <div class="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-[#1e1e1e]">
+        <% if comment.user.avatar.attached? %>
+          <%= image_tag comment.user.avatar, alt: "Аватар", class: "h-full w-full object-cover" %>
+        <% else %>
+          <%= image_tag "avatar.png", alt: "Аватар", class: "h-full w-full object-cover" %>
+        <% end %>
+      </div>
+      <div class="min-w-0">
+        <div class="truncate text-sm font-semibold text-[#f4f4f4]">
+          <%= comment.user.name.presence || comment.user.email.split("@").first.capitalize %>
+        </div>
+        <div class="truncate text-xs text-[#8a9098]">
+          @<%= comment.user.username.presence || comment.user.email.split("@").first.downcase %>
+        </div>
+      </div>
+    </div>
+    <span class="mcom-del-btn-wrap" data-cuid="<%= comment.user_id %>" data-puid="<%= comment.post.user_id %>">
+      <%= button_to "Удалить",
+          post_comment_path(comment.post, comment),
+          method: :delete,
+          class: "cursor-pointer border-0 bg-transparent p-0 text-xs text-red-300 hover:text-red-200 mcom-del-btn",
+          data: { confirm_text: "Удалить комментарий?" } %>
+    </span>
+  </div>
+  <p class="mt-2 whitespace-pre-wrap break-words text-left text-sm leading-6 text-[#d7d7d7]"><%= comment.body.to_s.strip %></p>
+</div>
